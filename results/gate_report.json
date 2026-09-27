@@ -1,0 +1,285 @@
+{
+  "n_gates": 26,
+  "n_failed": 0,
+  "n_flagged": 2,
+  "gates": [
+    {
+      "name": "D1_pchembl_agreement",
+      "passed": true,
+      "observed": "max|Delta|=0.005496",
+      "expected": "<= 0.01",
+      "severity": "fail"
+    },
+    {
+      "name": "D2_pic50_in_bounds",
+      "passed": true,
+      "observed": "[4.000, 10.301]",
+      "expected": "[3.0, 12.0]",
+      "severity": "fail"
+    },
+    {
+      "name": "D3_n_final_band",
+      "passed": true,
+      "observed": "6816",
+      "expected": "[5000, 9000]",
+      "severity": "fail"
+    },
+    {
+      "name": "D4_inchikey_unique",
+      "passed": true,
+      "observed": "0 duplicates",
+      "expected": "0 duplicates",
+      "severity": "fail"
+    },
+    {
+      "name": "D5_no_missing_core_fields",
+      "passed": true,
+      "observed": "0",
+      "expected": "0 nulls",
+      "severity": "fail"
+    },
+    {
+      "name": "D6_replicate_range_respected",
+      "passed": true,
+      "observed": "max range=1.0000",
+      "expected": "<= 1.0",
+      "severity": "fail"
+    },
+    {
+      "name": "D7_pos_rate_hard_bounds",
+      "passed": true,
+      "observed": "pos_rate@7.0=0.3650",
+      "expected": "in (0.02, 0.98)",
+      "severity": "fail"
+    },
+    {
+      "name": "D8_pos_rate_flag_bounds",
+      "passed": true,
+      "observed": "pos_rate@7.0=0.3650",
+      "expected": "in (0.2, 0.8)",
+      "severity": "flag"
+    },
+    {
+      "name": "L1_scaffold_group_disjoint",
+      "passed": true,
+      "observed": "0 shared",
+      "expected": "0 shared",
+      "severity": "fail"
+    },
+    {
+      "name": "L2_inchikey_disjoint",
+      "passed": true,
+      "observed": "0 shared",
+      "expected": "0 shared",
+      "severity": "fail"
+    },
+    {
+      "name": "L3_molecule_id_disjoint",
+      "passed": true,
+      "observed": "0 shared",
+      "expected": "0 shared",
+      "severity": "fail"
+    },
+    {
+      "name": "L4_no_duplicate_smiles",
+      "passed": true,
+      "observed": "0 duplicates",
+      "expected": "0 duplicates",
+      "severity": "fail"
+    },
+    {
+      "name": "L5_scaffold_string_disjoint",
+      "passed": true,
+      "observed": "0 shared",
+      "expected": "0 shared (cyclic only)",
+      "severity": "fail"
+    },
+    {
+      "name": "L6_fold_fractions",
+      "passed": true,
+      "observed": "val off by 0.0001",
+      "expected": "<= 0.03",
+      "severity": "fail"
+    },
+    {
+      "name": "L7_fold_sizes_partition",
+      "passed": true,
+      "observed": "{'train': 4771, 'val': 1023, 'test': 1022} sum=6816 n=6816",
+      "expected": "sizes sum to n and index is complete",
+      "severity": "fail"
+    },
+    {
+      "name": "L0_acyclic_fraction",
+      "passed": true,
+      "observed": "7 (0.0010)",
+      "expected": "< 0.05",
+      "severity": "fail"
+    },
+    {
+      "name": "L8_fingerprint_identical_to_train",
+      "passed": false,
+      "observed": "2 at sim=1.0 (ECFP4 bit collisions, distinct structures)",
+      "expected": "0 preferred; distinct structures are acceptable",
+      "severity": "flag"
+    },
+    {
+      "name": "L8b_no_identical_structure",
+      "passed": true,
+      "observed": "0 of 2 sim=1.0 pairs share a structure",
+      "expected": "0 shared structures",
+      "severity": "fail"
+    },
+    {
+      "name": "L9_high_similarity_reduction",
+      "passed": true,
+      "observed": "test frac>=0.85: 0.0568 vs random 0.2581 (4.5x fewer)",
+      "expected": ">= 2.0x fewer than random split",
+      "severity": "fail"
+    },
+    {
+      "name": "L10_median_below_random",
+      "passed": true,
+      "observed": "test median=0.6625 vs random 0.7857 (margin +0.1232)",
+      "expected": "at least 0.05 below the random-split median",
+      "severity": "fail"
+    },
+    {
+      "name": "L10b_median_absolute",
+      "passed": true,
+      "observed": "test median=0.6625 (dataset is congeneric; random-split control 0.7857)",
+      "expected": "recorded, not gated",
+      "severity": "info"
+    },
+    {
+      "name": "L11_fingerprint_identical_to_train_val",
+      "passed": false,
+      "observed": "6 at sim=1.0 (ECFP4 bit collisions, distinct structures)",
+      "expected": "0 preferred; distinct structures are acceptable",
+      "severity": "flag"
+    },
+    {
+      "name": "L11e_no_identical_structure_val",
+      "passed": true,
+      "observed": "0 of 6 sim=1.0 pairs share a structure",
+      "expected": "0 shared structures",
+      "severity": "fail"
+    },
+    {
+      "name": "L11b_high_similarity_reduction_val",
+      "passed": true,
+      "observed": "val frac>=0.85: 0.0547 vs random 0.2581 (4.7x fewer)",
+      "expected": ">= 2.0x fewer than random split",
+      "severity": "fail"
+    },
+    {
+      "name": "L11c_median_below_random_val",
+      "passed": true,
+      "observed": "val median=0.7021 vs random 0.7857 (margin +0.0836)",
+      "expected": "at least 0.05 below the random-split median",
+      "severity": "fail"
+    },
+    {
+      "name": "L11d_median_absolute_val",
+      "passed": true,
+      "observed": "val median=0.7021 (dataset is congeneric; random-split control 0.7857)",
+      "expected": "recorded, not gated",
+      "severity": "info"
+    }
+  ],
+  "created_utc": "2026-09-27T02:13:53+00:00",
+  "src_git_sha": "uncommitted",
+  "split_assignment_sha256": "d25042a5a092210547bf09f218f3ec2c655ed5c545a1d3cdfecf3d00a4854537",
+  "library_versions": {
+    "python": "3.13.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "rdkit": "2026.03.6",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "scikit-learn": "1.9.1"
+  },
+  "similarity_diagnostics": {
+    "scaffold_split_test_to_train": {
+      "median": 0.6625,
+      "mean": 0.6489,
+      "q25": 0.5611,
+      "q75": 0.7561,
+      "fraction_ge_0.85": 0.0568,
+      "n": 1022
+    },
+    "random_split_control_test_to_train": {
+      "median": 0.7857,
+      "mean": 0.7793,
+      "q25": 0.7055,
+      "q75": 0.8519,
+      "fraction_ge_0.85": 0.2581,
+      "n": 1023
+    },
+    "note": "The random-split control uses the same fold fractions with no chemotype separation, so it measures how congested this dataset is. Read L10 against it, not against an absolute constant."
+  },
+  "identical_fingerprint_pairs": [
+    {
+      "query_fold": "val",
+      "query_inchikey": "AGSBZZIFUWVYQV-UHFFFAOYSA-N",
+      "query_smiles": "Nc1ccccc1NC(=O)CCCCCNc1nn2c(=O)c3cc(Br)ccc3nc2c2ccccc12",
+      "train_inchikey": "SDBDWFGOZRAMHD-UHFFFAOYSA-N",
+      "train_smiles": "Nc1ccccc1NC(=O)CCCCCCNc1nn2c(=O)c3cc(Br)ccc3nc2c2ccccc12",
+      "same_structure": false
+    },
+    {
+      "query_fold": "val",
+      "query_inchikey": "BJJLNKFIXGFREV-UHFFFAOYSA-N",
+      "query_smiles": "Nc1ccccc1NC(=O)CCCCCC(=O)c1ccccc1",
+      "train_inchikey": "JPQXHVJGPUSGDL-UHFFFAOYSA-N",
+      "train_smiles": "Nc1ccccc1NC(=O)CCCCCCC(=O)c1ccccc1",
+      "same_structure": false
+    },
+    {
+      "query_fold": "val",
+      "query_inchikey": "CMFSOZAEQZHYJF-UHFFFAOYSA-N",
+      "query_smiles": "Nc1cccc(-c2csc(NC(=O)CCCCCCC(=O)Nc3ccccc3N)n2)c1",
+      "train_inchikey": "XGQUMWJYGRJITL-UHFFFAOYSA-N",
+      "train_smiles": "Nc1cccc(-c2csc(NC(=O)CCCCCC(=O)Nc3ccccc3N)n2)c1",
+      "same_structure": false
+    },
+    {
+      "query_fold": "val",
+      "query_inchikey": "ORSOHXUGUMCRLB-UHFFFAOYSA-N",
+      "query_smiles": "Nc1ccccc1NC(=O)CCCCCCCNc1nn2c(=O)c3cc(Br)ccc3nc2c2ccccc12",
+      "train_inchikey": "SDBDWFGOZRAMHD-UHFFFAOYSA-N",
+      "train_smiles": "Nc1ccccc1NC(=O)CCCCCCNc1nn2c(=O)c3cc(Br)ccc3nc2c2ccccc12",
+      "same_structure": false
+    },
+    {
+      "query_fold": "val",
+      "query_inchikey": "PIGOQJKXERKEJZ-UHFFFAOYSA-N",
+      "query_smiles": "O=C(CCC(CCCC(=O)Nc1ccccc1)Cc1ccccc1)NO",
+      "train_inchikey": "QANFVEVZXYUNSY-UHFFFAOYSA-N",
+      "train_smiles": "O=C(CCCC(CCC(=O)Nc1ccccc1)Cc1ccccc1)NO",
+      "same_structure": false
+    },
+    {
+      "query_fold": "val",
+      "query_inchikey": "ZAIULUYKQLVQFH-UHFFFAOYSA-N",
+      "query_smiles": "Nc1ccccc1NC(=O)CCCCCC(=O)Nc1ccccc1",
+      "train_inchikey": "RFLHBLWLFUFFDZ-UHFFFAOYSA-N",
+      "train_smiles": "Nc1ccccc1NC(=O)CCCCCCC(=O)Nc1ccccc1",
+      "same_structure": false
+    },
+    {
+      "query_fold": "test",
+      "query_inchikey": "BVYNKHHGAJSMBT-UHFFFAOYSA-N",
+      "query_smiles": "O=C(CCCCCC1NC(=O)C2CCCN2C(=O)C2CCCCCCCCCCC(NC1=O)C(=O)N2)NO",
+      "train_inchikey": "TVNZWPOEHUTSFV-UHFFFAOYSA-N",
+      "train_smiles": "O=C(CCCCCC1NC(=O)C2CCCN2C(=O)C2CCCCCCCCCCCC(NC1=O)C(=O)N2)NO",
+      "same_structure": false
+    },
+    {
+      "query_fold": "test",
+      "query_inchikey": "TWAKWKHDTZWUMO-UHFFFAOYSA-N",
+      "query_smiles": "O=C(C=Cc1ccc(S(=O)(=O)Nc2ccc(-c3ccccc3)cc2)cc1)NO",
+      "train_inchikey": "CITNMKKLNPYCDV-UHFFFAOYSA-N",
+      "train_smiles": "O=C(C=Cc1ccc(NS(=O)(=O)c2ccc(-c3ccccc3)cc2)cc1)NO",
+      "same_structure": false
+    }
+  ]
+}

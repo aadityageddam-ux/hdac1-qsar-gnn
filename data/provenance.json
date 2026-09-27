@@ -1,0 +1,142 @@
+{
+  "target": {
+    "target_chembl_id": "CHEMBL325",
+    "pref_name": "Histone deacetylase 1",
+    "organism": "Homo sapiens",
+    "target_type": "SINGLE PROTEIN",
+    "uniprot_accessions": [
+      "Q13547"
+    ]
+  },
+  "filters": {
+    "standard_type": "IC50",
+    "assay_type": "B",
+    "standard_units": "nM",
+    "standard_relation": "=",
+    "pchembl_value__isnull": "false",
+    "target_organism": "Homo sapiens",
+    "standard_value": "> 0",
+    "confidence_score": "== 9"
+  },
+  "funnel": {
+    "fetched_exact_relation_pchembl": 10048,
+    "organism_homo_sapiens": 10048,
+    "standard_value_gt_0": 10048,
+    "confidence_score_eq_9": 8757,
+    "has_smiles": 8757,
+    "unique_molecule_chembl_id": 7057
+  },
+  "assay_confidence_score_counts": {
+    "8": 70,
+    "9": 1046
+  },
+  "n_assays": 1046,
+  "n_documents": 720,
+  "n_data_validity_flagged": 0,
+  "censored": {
+    "relations": [
+      ">",
+      ">=",
+      "<",
+      "<="
+    ],
+    "n_censored": 1609,
+    "n_kept": 8757,
+    "censored_fraction": 0.155219
+  },
+  "fetch_provenance": [
+    {
+      "endpoint": "activity",
+      "params": {
+        "target_chembl_id": "CHEMBL325",
+        "standard_type": "IC50",
+        "assay_type": "B",
+        "standard_units": "nM",
+        "standard_relation": "=",
+        "pchembl_value__isnull": "false"
+      },
+      "total_count": 10048,
+      "n_records": 10048,
+      "n_pages": 11,
+      "retrieved_utc": "2026-09-26T05:37:43+00:00",
+      "source_url": "https://www.ebi.ac.uk/chembl/api/data/activity"
+    },
+    {
+      "endpoint": "assay",
+      "params": {
+        "assay_chembl_id__in": "<1116 ids in chunks of 200>"
+      },
+      "total_count": 1116,
+      "n_records": 1116,
+      "n_pages": 6,
+      "retrieved_utc": "2026-09-26T05:37:54+00:00",
+      "source_url": "https://www.ebi.ac.uk/chembl/api/data/assay"
+    },
+    {
+      "endpoint": "activity",
+      "params": {
+        "target_chembl_id": "CHEMBL325",
+        "standard_type": "IC50",
+        "assay_type": "B",
+        "standard_units": "nM",
+        "standard_relation__in": ">,>=,<,<="
+      },
+      "total_count": 1609,
+      "n_records": 1609,
+      "n_pages": 2,
+      "retrieved_utc": "2026-09-26T05:38:13+00:00",
+      "source_url": "https://www.ebi.ac.uk/chembl/api/data/activity"
+    }
+  ],
+  "cleaning": {
+    "standardization_pipeline": [
+      "rdMolStandardize.Cleanup",
+      "genuine-mixture rejection",
+      "rdMolStandardize.FragmentParent",
+      "rdMolStandardize.Uncharger.uncharge",
+      "Chem.RemoveStereochemistry",
+      "Chem.MolToSmiles / Chem.MolToInchiKey"
+    ],
+    "reason_counts": {
+      "ok": 8753,
+      "too_many_heavy_atoms": 4
+    },
+    "funnel": {
+      "raw_activity_rows": 8757,
+      "standardized_ok_rows": 8753,
+      "unique_inchikey": 6913,
+      "n_rows_in": 8753,
+      "n_groups": 6913,
+      "n_groups_dropped_range": 97,
+      "n_groups_kept": 6816,
+      "n_groups_with_replicates": 695,
+      "n_final": 6816
+    },
+    "n_stereocentres_stripped": 5568,
+    "n_activity_rows_with_stereo": 3105,
+    "max_abs_pic50_minus_pchembl": 0.005496221825573855,
+    "max_pic50_range_allowed": 1.0,
+    "pIC50_summary": {
+      "min": 4.0,
+      "median": 6.585026652029182,
+      "max": 10.301029995663981
+    },
+    "class_balance": {
+      "pIC50_ge_6.0": {
+        "n_active": 4690,
+        "n_inactive": 2126,
+        "pos_rate": 0.6881
+      },
+      "pIC50_ge_6.5": {
+        "n_active": 3607,
+        "n_inactive": 3209,
+        "pos_rate": 0.5292
+      },
+      "pIC50_ge_7.0": {
+        "n_active": 2488,
+        "n_inactive": 4328,
+        "pos_rate": 0.365
+      }
+    }
+  }
+}

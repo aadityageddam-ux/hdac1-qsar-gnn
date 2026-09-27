@@ -1,0 +1,39 @@
+[project]
+name = "hdac1-qsar-gnn"
+version = "0.1.0"
+description = "HDAC1 bioactivity prediction: ECFP4 random forest baseline vs. a message-passing GNN under a leak-free Murcko scaffold split."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "chembl-webresource-client>=0.10.9",
+    "rdkit>=2026.3",
+    "torch>=2.14",
+    "torch-geometric>=2.8",
+    "scikit-learn>=1.9",
+    "pandas>=2.2",
+    "numpy>=2.2",
+    "scipy>=1.17",
+    "matplotlib>=3.10",
+    "seaborn>=0.13",
+]
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.6",
+    "ipykernel>=6",
+    "nbconvert>=7",
+]
+
+# torch pulls a large, unusable CUDA payload from the default index on Windows.
+# This project is CPU-only, so torch is pinned to the PyTorch CPU wheel index.
+[tool.uv]
+# Not an installable package - scripts import src/ via sys.path, as in the sibling repos.
+package = false
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

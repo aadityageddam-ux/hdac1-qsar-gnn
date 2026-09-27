@@ -1,0 +1,351 @@
+{
+  "model": "GINEConv x4, hidden 64, mean+sum readout",
+  "architecture_note": "GINEConv, a member of the Gilmer et al. (2017) message-passing family, chosen over a literal NNConv edge-network MPNN for parameter efficiency at this dataset size. Not a verbatim reimplementation of Gilmer 2017.",
+  "split_sha256": "d25042a5a092210547bf09f218f3ec2c655ed5c545a1d3cdfecf3d00a4854537",
+  "evaluate_module_sha256": "0486db47e6fea9cc45d3e6a5983381dc4e88e89a78a3c42b2e9a84a5b98a9c3e",
+  "n_seeds": 5,
+  "refit_on_train_val": true,
+  "n_test_accesses": 1,
+  "n_train": 4771,
+  "n_val": 1023,
+  "n_fit": 5794,
+  "n_test": 1022,
+  "atom_feature_dim": 37,
+  "bond_feature_dim": 10,
+  "graph_stats": {
+    "train": {
+      "n_graphs": 4771,
+      "n_failed": 0,
+      "n_atoms": 146130,
+      "n_oov_atoms": 0,
+      "oov_fraction": 0.0,
+      "atom_feature_dim": 37,
+      "bond_feature_dim": 10
+    },
+    "val": {
+      "n_graphs": 1023,
+      "n_failed": 0,
+      "n_atoms": 35213,
+      "n_oov_atoms": 0,
+      "oov_fraction": 0.0,
+      "atom_feature_dim": 37,
+      "bond_feature_dim": 10
+    },
+    "test": {
+      "n_graphs": 1022,
+      "n_failed": 0,
+      "n_atoms": 31539,
+      "n_oov_atoms": 0,
+      "oov_fraction": 0.0,
+      "atom_feature_dim": 37,
+      "bond_feature_dim": 10
+    }
+  },
+  "config": {
+    "hidden": 64,
+    "depth": 4,
+    "dropout": 0.2,
+    "lr": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "max_epochs": 300,
+    "patience": 40,
+    "lr_factor": 0.5,
+    "lr_patience": 10,
+    "min_lr": 1e-05,
+    "grad_clip": 5.0,
+    "huber_beta": 1.0
+  },
+  "tuning": {
+    "grid": [
+      {
+        "config": {
+          "hidden": 64,
+          "depth": 3,
+          "dropout": 0.0
+        },
+        "val_rmse": 0.8139516711235046,
+        "best_epoch": 57,
+        "epochs_run": 97,
+        "n_parameters": 49281,
+        "seconds": 333.3
+      },
+      {
+        "config": {
+          "hidden": 64,
+          "depth": 3,
+          "dropout": 0.2
+        },
+        "val_rmse": 0.7733925580978394,
+        "best_epoch": 115,
+        "epochs_run": 155,
+        "n_parameters": 49281,
+        "seconds": 608.8
+      },
+      {
+        "config": {
+          "hidden": 64,
+          "depth": 4,
+          "dropout": 0.0
+        },
+        "val_rmse": 0.7674340009689331,
+        "best_epoch": 88,
+        "epochs_run": 128,
+        "n_parameters": 61889,
+        "seconds": 470.1
+      },
+      {
+        "config": {
+          "hidden": 64,
+          "depth": 4,
+          "dropout": 0.2
+        },
+        "val_rmse": 0.7403061389923096,
+        "best_epoch": 142,
+        "epochs_run": 182,
+        "n_parameters": 61889,
+        "seconds": 852.1
+      },
+      {
+        "config": {
+          "hidden": 128,
+          "depth": 3,
+          "dropout": 0.0
+        },
+        "val_rmse": 0.7709440588951111,
+        "best_epoch": 61,
+        "epochs_run": 101,
+        "n_parameters": 188673,
+        "seconds": 566.3
+      },
+      {
+        "config": {
+          "hidden": 128,
+          "depth": 3,
+          "dropout": 0.2
+        },
+        "val_rmse": 0.7754355072975159,
+        "best_epoch": 70,
+        "epochs_run": 110,
+        "n_parameters": 188673,
+        "seconds": 800.6
+      },
+      {
+        "config": {
+          "hidden": 128,
+          "depth": 4,
+          "dropout": 0.0
+        },
+        "val_rmse": 0.7629742622375488,
+        "best_epoch": 62,
+        "epochs_run": 102,
+        "n_parameters": 238465,
+        "seconds": 808.0
+      },
+      {
+        "config": {
+          "hidden": 128,
+          "depth": 4,
+          "dropout": 0.2
+        },
+        "val_rmse": 0.7517217993736267,
+        "best_epoch": 85,
+        "epochs_run": 125,
+        "n_parameters": 238465,
+        "seconds": 51822.9
+      }
+    ],
+    "best": {
+      "config": {
+        "hidden": 64,
+        "depth": 4,
+        "dropout": 0.2
+      },
+      "val_rmse": 0.7403061389923096,
+      "best_epoch": 142,
+      "epochs_run": 182,
+      "n_parameters": 61889,
+      "seconds": 852.1
+    },
+    "tuned_on": "validation fold only"
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "epochs_run": 142,
+      "rmse": 0.7574396747455658,
+      "n_parameters": 61889,
+      "seconds": 1064.0
+    },
+    {
+      "seed": 1,
+      "epochs_run": 142,
+      "rmse": 0.777567754270111,
+      "n_parameters": 61889,
+      "seconds": 665.9
+    },
+    {
+      "seed": 2,
+      "epochs_run": 142,
+      "rmse": 0.7712552988615619,
+      "n_parameters": 61889,
+      "seconds": 827.8
+    },
+    {
+      "seed": 3,
+      "epochs_run": 142,
+      "rmse": 0.7906693805578366,
+      "n_parameters": 61889,
+      "seconds": 941.3
+    },
+    {
+      "seed": 4,
+      "epochs_run": 142,
+      "rmse": 0.7749619709881159,
+      "n_parameters": 61889,
+      "seconds": 930.4
+    }
+  ],
+  "per_seed_rmse": [
+    0.7574396747455658,
+    0.777567754270111,
+    0.7712552988615619,
+    0.7906693805578366,
+    0.7749619709881159
+  ],
+  "per_seed_rmse_mean": 0.7743788158846383,
+  "per_seed_rmse_sd": 0.011964350759606399,
+  "regression": {
+    "rmse": 0.735687351065368,
+    "mae": 0.5534901231691646,
+    "r2": 0.550235184620206,
+    "spearman": 0.7455610060196186,
+    "pearson": 0.7463056301301938,
+    "n": 1022
+  },
+  "classification": {
+    "7.0": {
+      "threshold": 7.0,
+      "roc_auc": 0.8670168895901316,
+      "pr_auc": 0.756259942784728,
+      "mcc": 0.524994956854826,
+      "balanced_accuracy": 0.7518870800014343,
+      "n_pos": 316,
+      "n_neg": 706,
+      "pos_rate": 0.30919765166340507
+    },
+    "6.5": {
+      "threshold": 6.5,
+      "roc_auc": 0.854560173728212,
+      "pr_auc": 0.8320709628476066,
+      "mcc": 0.5759440305481215,
+      "balanced_accuracy": 0.787637595583129,
+      "n_pos": 489,
+      "n_neg": 533,
+      "pos_rate": 0.47847358121330724
+    },
+    "6.0": {
+      "threshold": 6.0,
+      "roc_auc": 0.8737566819893088,
+      "pr_auc": 0.9112138992321345,
+      "mcc": 0.5875494893317263,
+      "balanced_accuracy": 0.7712606859829024,
+      "n_pos": 655,
+      "n_neg": 367,
+      "pos_rate": 0.6409001956947162
+    }
+  },
+  "bootstrap": {
+    "rmse": {
+      "metric": "rmse",
+      "point": 0.735687351065368,
+      "lo": 0.6938468347663977,
+      "hi": 0.7804444980963715,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "mae": {
+      "metric": "mae",
+      "point": 0.5534901231691646,
+      "lo": 0.5243267852012213,
+      "hi": 0.5843035032572492,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "r2": {
+      "metric": "r2",
+      "point": 0.550235184620206,
+      "lo": 0.4967752326108182,
+      "hi": 0.5975662291094631,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "spearman": {
+      "metric": "spearman",
+      "point": 0.7455610060196186,
+      "lo": 0.7090918320080581,
+      "hi": 0.7759647400701142,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "pearson": {
+      "metric": "pearson",
+      "point": 0.7463056301301938,
+      "lo": 0.7117216301063735,
+      "hi": 0.7775905487808502,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "roc_auc": {
+      "metric": "roc_auc",
+      "point": 0.8670168895901316,
+      "lo": 0.8422532717033435,
+      "hi": 0.8889664643737453,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "pr_auc": {
+      "metric": "pr_auc",
+      "point": 0.756259942784728,
+      "lo": 0.7060598509225556,
+      "hi": 0.8038902772157439,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "mcc": {
+      "metric": "mcc",
+      "point": 0.524994956854826,
+      "lo": 0.4659287806960343,
+      "hi": 0.581429008878659,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "balanced_accuracy": {
+      "metric": "balanced_accuracy",
+      "point": 0.7518870800014343,
+      "lo": 0.7220925406515127,
+      "hi": 0.7809966177819645,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    }
+  },
+  "runtime_seconds": 60711.8
+}

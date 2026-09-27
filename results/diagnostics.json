@@ -1,0 +1,151 @@
+{
+  "learning_curve": {
+    "fractions": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "seeds": [
+      0,
+      1
+    ],
+    "n_train_total": 4771,
+    "detail": [
+      {
+        "fraction": 0.1,
+        "n_train_mean": 500.5,
+        "rf_rmse": [
+          0.95901755979915,
+          0.9880025557526877
+        ],
+        "gnn_rmse": [
+          1.062228658102203,
+          1.1148471981653303
+        ]
+      },
+      {
+        "fraction": 0.25,
+        "n_train_mean": 1200.0,
+        "rf_rmse": [
+          0.8630249442135486,
+          0.9186622695781012
+        ],
+        "gnn_rmse": [
+          0.9892762710763966,
+          1.06186962533543
+        ]
+      },
+      {
+        "fraction": 0.5,
+        "n_train_mean": 2389.5,
+        "rf_rmse": [
+          0.8197457664603073,
+          0.8327301678106395
+        ],
+        "gnn_rmse": [
+          0.909782568333228,
+          0.9022631780516414
+        ]
+      },
+      {
+        "fraction": 0.75,
+        "n_train_mean": 3579.5,
+        "rf_rmse": [
+          0.7753758019286437,
+          0.7890355230828291
+        ],
+        "gnn_rmse": [
+          0.8162067732682993,
+          0.8935435903834932
+        ]
+      },
+      {
+        "fraction": 1.0,
+        "n_train_mean": 4771.0,
+        "rf_rmse": [
+          0.7407618325996784,
+          0.7423881317636903
+        ],
+        "gnn_rmse": [
+          0.7603276553171273,
+          0.7727944075000991
+        ]
+      }
+    ],
+    "Random forest (ECFP4 + descriptors)": {
+      "mean": [
+        0.9735100577759188,
+        0.8908436068958249,
+        0.8262379671354734,
+        0.7822056625057364,
+        0.7415749821816844
+      ],
+      "sd": [
+        0.020495487191411112,
+        0.039341530052357424,
+        0.009181358244467653,
+        0.00965888145724179,
+        0.0011499671671108369
+      ],
+      "n_train": [
+        500.5,
+        1200.0,
+        2389.5,
+        3579.5,
+        4771.0
+      ]
+    },
+    "GINE graph neural network": {
+      "mean": [
+        1.0885379281337666,
+        1.0255729482059133,
+        0.9060228731924347,
+        0.8548751818258962,
+        0.7665610314086132
+      ],
+      "sd": [
+        0.0372069264947734,
+        0.051331253065639904,
+        0.005317011858498148,
+        0.05468538781753746,
+        0.008815325007951536
+      ],
+      "n_train": [
+        500.5,
+        1200.0,
+        2389.5,
+        3579.5,
+        4771.0
+      ]
+    },
+    "subsampling": "whole scaffold groups, never individual compounds",
+    "reduced_protocol": {
+      "n_seeds": 2,
+      "gnn_max_epochs": 120,
+      "gnn_patience": 20,
+      "note": "The curve uses 2 seeds and a capped epoch budget, unlike the headline result which uses 5 seeds and patience 40 with a 300-epoch cap. The curve answers which way performance is trending with data volume; it is not a second estimate of the headline RMSE."
+    }
+  },
+  "random_split_control": {
+    "seed": 20260925,
+    "fold_sizes": {
+      "train": 4771,
+      "val": 1023,
+      "test": 1022
+    },
+    "Random forest (ECFP4 + descriptors)": {
+      "random_rmse": 0.6081244877353804,
+      "scaffold_rmse": 0.736668353343529,
+      "optimism": 0.12854386560814857
+    },
+    "GINE graph neural network": {
+      "random_rmse": 0.6796392301453607,
+      "scaffold_rmse": 0.735687351065368,
+      "optimism": 0.05604812092000733
+    },
+    "note": "Optimism is scaffold RMSE minus random RMSE: how much better a random-split evaluation would have looked on identical data and models."
+  },
+  "runtime_seconds": 4536.4
+}

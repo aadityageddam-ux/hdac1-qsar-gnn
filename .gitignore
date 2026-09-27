@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Raw ChEMBL API dump (4.3 MB). Not committed, following the convention in the sibling
+# repos: derived artifacts are versioned, raw upstream data is re-fetched. Regenerate with
+# `uv run python scripts/01_fetch_chembl.py`; the exact query predicates, per-stage record
+# counts and retrieval timestamp are committed in data/provenance.json, so the pull is
+# reproducible without shipping a cached copy of someone else's database.
+data/raw_activities.csv

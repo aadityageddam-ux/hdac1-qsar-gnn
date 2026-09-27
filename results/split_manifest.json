@@ -1,0 +1,47 @@
+{
+  "split_assignment_sha256": "d25042a5a092210547bf09f218f3ec2c655ed5c545a1d3cdfecf3d00a4854537",
+  "created_utc": "2026-09-27T02:13:53+00:00",
+  "src_git_sha": "uncommitted",
+  "split_csv": "split_assignment.csv",
+  "fingerprint": {
+    "radius": 2,
+    "fp_size": 2048,
+    "include_chirality": false,
+    "api": "rdFingerprintGenerator.GetMorganGenerator"
+  },
+  "library_versions": {
+    "python": "3.13.11",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "rdkit": "2026.03.6",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "scikit-learn": "1.9.1"
+  },
+  "algorithm": "deterministic-greedy-murcko-descending-size",
+  "scaffold_function": "MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=False)",
+  "n_compounds": 6816,
+  "n_groups": 3128,
+  "n_acyclic": 7,
+  "acyclic_fraction": 0.001027,
+  "fold_sizes": {
+    "train": 4771,
+    "val": 1023,
+    "test": 1022
+  },
+  "fold_fractions": {
+    "train": 0.699971,
+    "val": 0.150088,
+    "test": 0.149941
+  },
+  "fold_group_counts": {
+    "train": 1083,
+    "val": 1023,
+    "test": 1022
+  },
+  "requested_fractions": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "fraction_tolerance": 0.03
+}
