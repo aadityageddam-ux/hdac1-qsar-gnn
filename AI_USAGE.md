@@ -38,6 +38,14 @@ where AI-written code encoded an assumption that measurement later refuted.
 
 3. > continue
 
+4. > Be brutally honest and grade this project to show a hiring manager, founder, VC as a work
+   > sample, especially for Genesis Molecular AI, and if it has holes if we can improve it or
+   > scrap it
+
+   This produced the assessment and the four-item remediation list described below.
+
+5. > do items all items one at a time
+
 4. One further decision was escalated mid-build, when the leakage gates failed — see
    Interaction 2 below.
 
@@ -185,16 +193,105 @@ reduced to two; it is now generated from the seed count actually used.
 Neither bug would have changed a number. Both would have misled a reader — one by asserting a
 safety property that was never really being tested, the other by mislabelling a chart.
 
+## The second pass: what a critical review changed
+
+After the first version was complete and verified, I asked for a deliberately harsh assessment of
+the repository as a work sample. The review graded it B+ and argued that the craft was strong but
+the science was derivative, and it identified four specific gaps. All four were then closed:
+
+1. **No field-standard graph baseline.** The original comparison used only a hand-rolled GINE
+   network, which leaves open the objection that the graph side lost because it was weak.
+   Chemprop's D-MPNN was added (`scripts/05b_train_chemprop.py`). It reproduced the scaffold-split
+   tie to within 0.005 RMSE — and it refuted the headline claim the README had been restructured
+   around. See Interaction 5.
+2. **The lede was buried.** The model comparison reproduces what the field already believes; the
+   quantified split-dependence is the part that generalises. The README was restructured around it.
+3. **One target is an anecdote.** `scripts/10_multitarget.py` re-runs the core experiment on HDAC6
+   and hERG as well, testing whether the effect replicates within the enzyme family and across a
+   completely different target class.
+4. **This file was unbalanced** - see below.
+
+Two smaller things the review got right and I acted on: the study is only marginally powered to
+detect a real difference, which is now stated in Limitations rather than left implicit; and the
+similarity-stratified result is suggestive rather than significant, which the README now says
+plainly instead of leaning on it.
+
+One claim in the review I checked and partially rejected. It assumed hERG would be a structurally
+diverse contrast to HDAC1's congeneric corpus. Measuring nearest-neighbour similarity across four
+candidate targets showed all of them are similarly congeneric (median 0.79-0.81), so hERG was kept
+for being a different target class, not for being more diverse - and the observation that this is
+systematic across ChEMBL single-target corpora, rather than an HDAC1 quirk, became a finding in
+its own right.
+
+## Interaction 5: adding the standard baseline refuted my own headline
+
+This is the most instructive thing that happened in the project, and it happened because of the
+critical review rather than in spite of it.
+
+After the first pass, the README's headline finding was that a random split flatters a fingerprint
+model substantially more than a graph model — measured as +0.1285 log units of optimism for the
+random forest against +0.0560 for the GINE network, a better-than-2× asymmetry, large enough that a
+random split reversed which model appeared to win. I found that result genuinely exciting and built
+the restructured README around it.
+
+The review's first criticism was that the project never ran Chemprop, the D-MPNN the field actually
+benchmarks against, leaving open the objection that the graph side lost because it was a weak graph
+model. I added Chemprop expecting it to corroborate the asymmetry. It did the opposite:
+
+| Model | random split | scaffold split | optimism |
+| --- | --- | --- | --- |
+| Random forest | 0.6081 | 0.7367 | +0.1285 |
+| **Chemprop D-MPNN** | **0.6066** | **0.7312** | **+0.1246** |
+| GINE (mine) | 0.6796 | 0.7357 | +0.0560 |
+
+Chemprop's optimism is within 0.004 of the forest's. The asymmetry was a property of my weaker
+network, not of graph models — and the deflationary explanation is visible in the same table: GINE
+gains least from a random split because it is *worst* under the random split, so it has less
+ability to exploit the near-duplicate analogues a random split leaves lying around. I had read a
+capacity limitation as an architectural virtue.
+
+What survived is smaller but real, and is now the headline: a random split buys ~0.125 log units
+(~17% RMSE) of apparent accuracy on identical data and identical models, regardless of
+architecture.
+
+The correction is kept visible at the top of the README rather than quietly rewritten, for two
+reasons. The overturned claim is a good example of the specific failure mode the project is about —
+drawing an architectural conclusion from an evaluation artifact — and I would rather a reader see
+that I caught it than discover the earlier version in the git history. It is also the clearest
+demonstration in this repository of why the "just add the standard baseline" criticism was worth
+acting on: it did not strengthen my result, it deleted it.
+
 ## What was mine vs. AI-generated
 
-Effectively all of the code in `src/` and `scripts/` was written by Claude, as were the first
-drafts of this file and the README. My contribution was the brief, the four planning decisions,
-the escalated split-versus-gate decision in Interaction 2, and the review that rejected the
-AI's initial instinct to make failing gates pass.
+**Claude wrote effectively all of the code** in `src/` and `scripts/`, and the first drafts of this
+file and the README. That should be read literally: I did not type these modules.
+
+What was mine was the specification and the decisions, which in a project like this is where most
+of the load sits:
+
+- **The brief.** The scientific framing, the choice of HDAC1 and why it beats the signalling-pathway
+  compounds as an example, the seven build phases, the requirement that a verification pass be run
+  by an agent that did not build the phase being checked, and explicit risk clauses for the GNN
+  stalling and for class imbalance. The methodological spine of the project is in the brief.
+- **Four design decisions** taken during planning: scripts over a single notebook, a validation-fold
+  tuning protocol with multi-seed reporting over fixed defaults, inclusion of the learning-curve and
+  similarity diagnostics, and building locally with the commit left unpushed for review.
+- **The escalated call in Interaction 2.** When the leakage gates failed, the model's first instinct
+  was to resolve it; I stopped it and made the call myself, because choosing a split on the basis
+  that it produces a desired number is exactly the failure the gate existed to prevent.
+- **Commissioning the adversarial review** that produced the second pass above, and deciding which
+  of its criticisms to act on.
+
+**What this does not entitle me to claim.** I did not derive the D-MPNN, implement the bootstrap,
+or independently discover that `np.std` of identical floats is non-zero. If you are evaluating this
+as evidence of engineering skill, weight it accordingly - and ask me to explain any part of
+`src/evaluate.py` or `src/scaffold_split.py`, which is the fair test of whether I understand what is
+in this repository.
 
 The substantive judgement calls are recorded where they were made rather than smoothed over: the
 classification threshold was pre-registered at the conventional 100 nM cut before any model was
-scored and not moved afterwards; the failing gates were investigated rather than relaxed; and
-the comparison verdict in the README is generated programmatically from the confidence interval
-in `results/comparison.json` rather than written by hand, so the prose cannot drift from the
-numbers it describes.
+scored and not moved afterwards; the failing gates were investigated rather than relaxed; the
+multiple-comparisons problem is stated rather than exploited (1 of 27 tests reached p < 0.05, which
+is what 27 tests produce by chance, and the README says so); and the comparison verdict is generated
+programmatically from the confidence interval in `results/comparison.json` rather than written by
+hand, so the prose cannot drift from the numbers it describes.

@@ -46,6 +46,7 @@ SAVE_KWARGS = {"dpi": FIG_DPI, "bbox_inches": "tight"}
 MODEL_COLOURS: dict[str, str] = {
     "rf": "#1f6f8b",
     "gnn": "#c1542d",
+    "chemprop": "#6a4c93",
     "1nn": "#7a7a7a",
     "mean": "#b9b9b9",
 }
@@ -85,6 +86,8 @@ def resolve_colour(label: str) -> str | None:
     for alias, colour in (
         ("random forest", MODEL_COLOURS["rf"]), ("forest", MODEL_COLOURS["rf"]),
         ("rf", MODEL_COLOURS["rf"]),
+        ("chemprop", MODEL_COLOURS["chemprop"]), ("d-mpnn", MODEL_COLOURS["chemprop"]),
+        ("mpnn", MODEL_COLOURS["chemprop"]),
         ("gine", MODEL_COLOURS["gnn"]), ("gnn", MODEL_COLOURS["gnn"]),
         ("graph", MODEL_COLOURS["gnn"]),
         ("1-nn", MODEL_COLOURS["1nn"]), ("1nn", MODEL_COLOURS["1nn"]),

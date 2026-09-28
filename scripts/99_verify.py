@@ -170,42 +170,60 @@ def verify_gates(split: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------------
 
 
-def verify_protocol() -> tuple[dict, dict, dict] | None:
-    """Check the two models shared a split, shared a harness, and were treated alike."""
-    print("\n[4] Model protocol symmetry")
-    needed = ["metrics_rf.json", "metrics_gnn.json", "comparison.json"]
-    missing = [n for n in needed if not (RESULTS / n).exists()]
-    if missing:
-        print(f"  SKIP  model artifacts not yet present: {missing}")
+def verify_protocol() -> tuple[dict[str, dict], dict] | None:
+    """Check every model shared a split, shared a harness, and was treated alike.
+
+    Generalised over however many models are present: adding a third model must not
+    quietly escape the symmetry checks that make the comparison meaningful.
+    """
+    print()
+    print("[4] Model protocol symmetry")
+    model_files = {
+        "random forest": "metrics_rf.json",
+        "GINE": "metrics_gnn.json",
+        "Chemprop D-MPNN": "metrics_chemprop.json",
+    }
+    present = {n: f for n, f in model_files.items() if (RESULTS / f).exists()}
+    if len(present) < 2 or not (RESULTS / "comparison.json").exists():
+        print(f"  SKIP  need >=2 model artifacts plus comparison.json; found {sorted(present)}")
         return None
 
-    rf = json.loads((RESULTS / "metrics_rf.json").read_text(encoding="utf-8"))
-    gnn = json.loads((RESULTS / "metrics_gnn.json").read_text(encoding="utf-8"))
+    models = {n: json.loads((RESULTS / f).read_text(encoding="utf-8")) for n, f in present.items()}
     comparison = json.loads((RESULTS / "comparison.json").read_text(encoding="utf-8"))
     manifest = json.loads((RESULTS / "split_manifest.json").read_text(encoding="utf-8"))
+    print(f"  models present: {', '.join(models)}")
 
-    check("both models consumed the identical split",
-          rf["split_sha256"] == gnn["split_sha256"] == manifest["split_assignment_sha256"])
-    check("both models were scored by identical harness code",
-          rf["evaluate_module_sha256"] == gnn["evaluate_module_sha256"])
+    splits = {m["split_sha256"] for m in models.values()}
+    check("every model consumed the identical split",
+          len(splits) == 1 and splits.pop() == manifest["split_assignment_sha256"])
+
+    harnesses = {m["evaluate_module_sha256"] for m in models.values()}
+    check("every model was scored by identical harness code", len(harnesses) == 1)
     check("the harness has not changed since the models were scored",
-          rf["evaluate_module_sha256"] == ev.module_sha256(),
-          "re-run 04 and 05 if this fails")
-    check("both models used the same number of seeds",
-          rf["n_seeds"] == gnn["n_seeds"] == 5, f"rf={rf['n_seeds']} gnn={gnn['n_seeds']}")
-    check("both models were refit on train + val",
-          bool(rf["refit_on_train_val"]) and bool(gnn["refit_on_train_val"]))
-    check("each model read the test fold exactly once",
-          rf["n_test_accesses"] == 1 and gnn["n_test_accesses"] == 1)
-    check("both models were fit on the same number of compounds",
-          rf["n_fit"] == gnn["n_fit"], f"rf={rf['n_fit']} gnn={gnn['n_fit']}")
-    return rf, gnn, comparison
+          harnesses and next(iter({m["evaluate_module_sha256"] for m in models.values()})) == ev.module_sha256(),
+          "re-run the model scripts if this fails")
+
+    for name, m in models.items():
+        check(f"{name}: 5 seeds", m["n_seeds"] == 5, f"n_seeds={m['n_seeds']}")
+        check(f"{name}: refit on train + val", bool(m["refit_on_train_val"]))
+        check(f"{name}: read the test fold exactly once", m["n_test_accesses"] == 1,
+              f"{m['n_test_accesses']} access(es)")
+    fit_sizes = {m["n_fit"] for m in models.values()}
+    check("every model was fit on the same number of compounds", len(fit_sizes) == 1,
+          f"{sorted(fit_sizes)}")
+
+    check("comparison.json covers every model artifact present",
+          len(comparison.get("models", [])) == len(models),
+          f"comparison lists {len(comparison.get('models', []))}, artifacts present {len(models)}")
+    return models, comparison
 
 
 def verify_no_test_tuning() -> None:
     """Static check that no model script selects hyperparameters using the test fold."""
     print("\n[5] Static check: tuning never touches the test fold")
-    for script in ("04_train_baseline.py", "05_train_gnn.py"):
+    scripts = [s for s in ("04_train_baseline.py", "05_train_gnn.py", "05b_train_chemprop.py")
+               if (SCRIPTS / s).exists()]
+    for script in scripts:
         source = (SCRIPTS / script).read_text(encoding="utf-8")
         tree = ast.parse(source)
         n_calls = sum(
@@ -230,7 +248,10 @@ def verify_no_test_tuning() -> None:
         offending = sorted(n for n in imported if "scaffold_split" in n)
         check(f"{script} does not import scaffold_split", not offending,
               f"imports {offending}" if offending else "verified via AST")
-        tune_line = source.find("tune_random_forest") if "tune_random_forest" in source else source.find("TUNING_GRID")
+        for marker in ("tune_random_forest", "TUNING_GRID", "train_once("):
+            tune_line = source.find(marker)
+            if tune_line != -1:
+                break
         test_line = source.find("bundle.test()")
         check(f"{script} tunes before it reads the test fold",
               tune_line == -1 or test_line == -1 or tune_line < test_line)
@@ -241,7 +262,7 @@ def verify_no_test_tuning() -> None:
 # ---------------------------------------------------------------------------------
 
 
-def verify_readme(rf: dict, gnn: dict, comparison: dict) -> None:
+def verify_readme(models: dict[str, dict], comparison: dict) -> None:
     """Re-derive the README's quoted numbers from the artifacts and compare."""
     print("\n[6] README consistency")
     readme = ROOT / "README.md"
@@ -253,15 +274,13 @@ def verify_readme(rf: dict, gnn: dict, comparison: dict) -> None:
     # Look the rows up by model name rather than by position: a positional index would
     # silently verify the wrong row if the table order ever changed.
     by_model = {row["model"]: row for row in comparison["table"]}
-    label_rf = comparison["labels"]["a"]
-    label_gnn = comparison["labels"]["b"]
-    check("comparison table contains both model rows",
-          label_rf in by_model and label_gnn in by_model)
+    check("comparison table contains a row for every model",
+          all(label in by_model for label in comparison["models"]),
+          f"models={comparison['models']}")
     recomputed = {
-        "rf_rmse": by_model[label_rf]["rmse"],
-        "gnn_rmse": by_model[label_gnn]["rmse"],
-        "delta_rmse": comparison["deltas"]["rmse"]["delta"],
+        f"{label} RMSE": by_model[label]["rmse"] for label in comparison["models"]
     }
+    recomputed["headline delta"] = comparison["deltas"]["rmse"]["delta"]
     for key, value in recomputed.items():
         rendered = f"{value:.3f}"
         check(f"README quotes {key} = {rendered}", rendered in text or f"{value:.4f}" in text,
@@ -291,7 +310,7 @@ def main() -> None:
     protocol = verify_protocol()
     verify_no_test_tuning()
     if protocol is not None:
-        verify_readme(*protocol)
+        verify_readme(protocol[0], protocol[1])
 
     print("\n" + "=" * 78)
     if flags:

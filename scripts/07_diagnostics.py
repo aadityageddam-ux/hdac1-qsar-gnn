@@ -31,6 +31,7 @@ sys.path.insert(0, str(ROOT))
 from src import baseline_rf as rf  # noqa: E402
 from src import evaluate as ev  # noqa: E402
 from src import featurize as F  # noqa: E402
+from src import chemprop_model as CP  # noqa: E402
 from src import gnn as G  # noqa: E402
 from src import plotting as P  # noqa: E402
 
@@ -56,6 +57,7 @@ RANDOM_SPLIT_SEED = 20260925
 
 LABEL_RF = "Random forest (ECFP4 + descriptors)"
 LABEL_GNN = "GINE graph neural network"
+LABEL_CHEMPROP = "Chemprop D-MPNN"
 
 
 def subsample_by_scaffold_group(frame: pd.DataFrame, fraction: float, seed: int) -> pd.DataFrame:
@@ -107,12 +109,12 @@ def main() -> None:
 
     print("[2/3] Learning curve (subsampling whole scaffold groups) ...")
     curve: dict[str, dict[str, list[float]]] = {
-        LABEL_RF: {"mean": [], "sd": [], "n_train": []},
-        LABEL_GNN: {"mean": [], "sd": [], "n_train": []},
+        label: {"mean": [], "sd": [], "n_train": []}
+        for label in (LABEL_RF, LABEL_GNN, LABEL_CHEMPROP)
     }
     curve_detail = []
     for fraction in FRACTIONS:
-        rf_scores, gnn_scores, sizes = [], [], []
+        rf_scores, gnn_scores, cp_scores, sizes = [], [], [], []
         for seed in CURVE_SEEDS:
             subset = subsample_by_scaffold_group(train, fraction, seed)
             sizes.append(len(subset))
@@ -133,17 +135,25 @@ def main() -> None:
             model, tr = G.train_model(sub_graphs, val_graphs, curve_config, seed=seed)
             gnn_scores.append(ev.compute_metric("rmse", y_test, G.predict(model, test_graphs, tr)))
 
-        for label, scores in ((LABEL_RF, rf_scores), (LABEL_GNN, gnn_scores)):
+            cp_model, _, _, _ = CP.train_once(
+                subset, val, seed=seed, max_epochs=CURVE_MAX_EPOCHS, use_early_stopping=True
+            )
+            cp_scores.append(ev.compute_metric("rmse", y_test, CP.predict(cp_model, test)))
+
+        for label, scores in (
+            (LABEL_RF, rf_scores), (LABEL_GNN, gnn_scores), (LABEL_CHEMPROP, cp_scores)
+        ):
             curve[label]["mean"].append(float(np.mean(scores)))
             curve[label]["sd"].append(float(np.std(scores, ddof=1)) if len(scores) > 1 else 0.0)
             curve[label]["n_train"].append(float(np.mean(sizes)))
         curve_detail.append({
             "fraction": fraction, "n_train_mean": float(np.mean(sizes)),
-            "rf_rmse": rf_scores, "gnn_rmse": gnn_scores,
+            "rf_rmse": rf_scores, "gnn_rmse": gnn_scores, "chemprop_rmse": cp_scores,
         })
         print(f"      {fraction:5.0%}  n~{np.mean(sizes):6.0f}   "
               f"RF {np.mean(rf_scores):.4f}+-{np.std(rf_scores, ddof=1):.4f}   "
-              f"GNN {np.mean(gnn_scores):.4f}+-{np.std(gnn_scores, ddof=1):.4f}")
+              f"GINE {np.mean(gnn_scores):.4f}+-{np.std(gnn_scores, ddof=1):.4f}   "
+              f"Chemprop {np.mean(cp_scores):.4f}+-{np.std(cp_scores, ddof=1):.4f}")
 
     print("[3/3] Random-split control ...")
     rng = np.random.default_rng(RANDOM_SPLIT_SEED)
@@ -174,18 +184,29 @@ def main() -> None:
     )
     gnn_random_rmse = ev.compute_metric("rmse", ry_test, G.predict(gmodel, r_test_graphs, gtr))
 
+    cp_metrics = json.loads((RESULTS / "metrics_chemprop.json").read_text(encoding="utf-8"))
+    cp_epochs = int(cp_metrics["config"]["selected_epochs"])
+    cp_model, _, _, _ = CP.train_once(
+        pd.concat([r_train, r_val], ignore_index=True), None, seed=0,
+        max_epochs=cp_epochs, use_early_stopping=False,
+    )
+    cp_random_rmse = ev.compute_metric("rmse", ry_test, CP.predict(cp_model, r_test))
+
     scaffold_rf = rf_metrics["regression"]["rmse"]
     scaffold_gnn = gnn_metrics["regression"]["rmse"]
+    scaffold_cp = cp_metrics["regression"]["rmse"]
     print(f"      RF   random {rf_random_rmse:.4f}  vs scaffold {scaffold_rf:.4f}  "
           f"(optimism {scaffold_rf - rf_random_rmse:+.4f})")
-    print(f"      GNN  random {gnn_random_rmse:.4f}  vs scaffold {scaffold_gnn:.4f}  "
+    print(f"      GINE random {gnn_random_rmse:.4f}  vs scaffold {scaffold_gnn:.4f}  "
           f"(optimism {scaffold_gnn - gnn_random_rmse:+.4f})")
+    print(f"      CP   random {cp_random_rmse:.4f}  vs scaffold {scaffold_cp:.4f}  "
+          f"(optimism {scaffold_cp - cp_random_rmse:+.4f})")
 
     P.save_figure(
         P.learning_curve(
             FRACTIONS,
-            {LABEL_RF: (curve[LABEL_RF]["mean"], curve[LABEL_RF]["sd"]),
-             LABEL_GNN: (curve[LABEL_GNN]["mean"], curve[LABEL_GNN]["sd"])},
+            {label: (curve[label]["mean"], curve[label]["sd"])
+             for label in (LABEL_RF, LABEL_GNN, LABEL_CHEMPROP)},
             n_train_total=len(train),
             title=f"Learning curve (scaffold-group subsampling, {len(CURVE_SEEDS)} seeds, capped epochs)",
         ),
@@ -197,6 +218,7 @@ def main() -> None:
             "fractions": list(FRACTIONS), "seeds": list(CURVE_SEEDS),
             "n_train_total": int(len(train)), "detail": curve_detail,
             LABEL_RF: curve[LABEL_RF], LABEL_GNN: curve[LABEL_GNN],
+            LABEL_CHEMPROP: curve[LABEL_CHEMPROP],
             "subsampling": "whole scaffold groups, never individual compounds",
             "reduced_protocol": {
                 "n_seeds": len(CURVE_SEEDS),
@@ -217,6 +239,8 @@ def main() -> None:
                        "optimism": scaffold_rf - rf_random_rmse},
             LABEL_GNN: {"random_rmse": gnn_random_rmse, "scaffold_rmse": scaffold_gnn,
                         "optimism": scaffold_gnn - gnn_random_rmse},
+            LABEL_CHEMPROP: {"random_rmse": cp_random_rmse, "scaffold_rmse": scaffold_cp,
+                             "optimism": scaffold_cp - cp_random_rmse},
             "note": (
                 "Optimism is scaffold RMSE minus random RMSE: how much better a "
                 "random-split evaluation would have looked on identical data and models."

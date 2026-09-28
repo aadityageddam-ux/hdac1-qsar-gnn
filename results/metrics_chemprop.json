@@ -1,0 +1,250 @@
+{
+  "model": "Chemprop D-MPNN (defaults: bond message passing, mean aggregation)",
+  "architecture_note": "Chemprop 2.3.1 at author-default hyperparameters. No hyperparameter search was run: the defaults are the configuration the field benchmarks against, which is what makes this a reference point rather than a tuned competitor.",
+  "reference": "Yang et al., J Chem Inf Model 2019, 59(8):3370-3388",
+  "split_sha256": "d25042a5a092210547bf09f218f3ec2c655ed5c545a1d3cdfecf3d00a4854537",
+  "evaluate_module_sha256": "0486db47e6fea9cc45d3e6a5983381dc4e88e89a78a3c42b2e9a84a5b98a9c3e",
+  "n_seeds": 5,
+  "refit_on_train_val": true,
+  "n_test_accesses": 1,
+  "n_train": 4771,
+  "n_val": 1023,
+  "n_fit": 5794,
+  "n_test": 1022,
+  "n_parameters": 318901,
+  "config": {
+    "max_epochs": 50,
+    "patience": 15,
+    "batch_size": 64,
+    "selected_epochs": 33,
+    "hyperparameter_search": "none (author defaults)"
+  },
+  "selection": {
+    "val_rmse": 0.7531196965762255,
+    "val_loss_curve": [
+      0.8377507328987122,
+      1.1930973529815674,
+      0.8103452920913696,
+      2.1279423236846924,
+      0.8359053134918213,
+      0.6053441762924194,
+      0.6143290996551514,
+      0.6419273018836975,
+      0.5340292453765869,
+      0.5972084999084473,
+      0.6189178228378296,
+      0.6090715527534485,
+      0.5545329451560974,
+      0.5395270586013794,
+      0.5247181057929993,
+      0.5313223600387573,
+      0.4592296779155731,
+      0.4539245665073395,
+      0.500229001045227,
+      0.4651806354522705,
+      0.442227840423584,
+      0.5317360758781433,
+      0.4779328405857086,
+      0.43832191824913025,
+      0.4561789035797119,
+      0.44570934772491455,
+      0.44820621609687805,
+      0.4576205909252167,
+      0.476809561252594,
+      0.47462406754493713,
+      0.44690173864364624,
+      0.45486724376678467,
+      0.43436387181282043,
+      0.4497380554676056,
+      0.46777766942977905,
+      0.4687595069408417,
+      0.4486493766307831,
+      0.4531952142715454,
+      0.4458180069923401,
+      0.4665554463863373,
+      0.46492448449134827,
+      0.449722558259964,
+      0.45242249965667725,
+      0.45304158329963684,
+      0.4489991068840027,
+      0.4829876124858856,
+      0.44889581203460693,
+      0.4525546729564667
+    ],
+    "tuned_on": "validation fold only (epoch count only)"
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "epochs_run": 33,
+      "rmse": 0.7696910821212202,
+      "seconds": 892.7
+    },
+    {
+      "seed": 1,
+      "epochs_run": 33,
+      "rmse": 0.7539151364639655,
+      "seconds": 851.5
+    },
+    {
+      "seed": 2,
+      "epochs_run": 33,
+      "rmse": 0.7653198837661787,
+      "seconds": 761.4
+    },
+    {
+      "seed": 3,
+      "epochs_run": 33,
+      "rmse": 0.7769020133410452,
+      "seconds": 830.7
+    },
+    {
+      "seed": 4,
+      "epochs_run": 33,
+      "rmse": 0.7765559115126244,
+      "seconds": 788.7
+    }
+  ],
+  "per_seed_rmse": [
+    0.7696910821212202,
+    0.7539151364639655,
+    0.7653198837661787,
+    0.7769020133410452,
+    0.7765559115126244
+  ],
+  "per_seed_rmse_mean": 0.7684768054410067,
+  "per_seed_rmse_sd": 0.009483392177767353,
+  "regression": {
+    "rmse": 0.7312206145650555,
+    "mae": 0.5406978381661408,
+    "r2": 0.5556801121047341,
+    "spearman": 0.7644359114197283,
+    "pearson": 0.7541694599706502,
+    "n": 1022
+  },
+  "classification": {
+    "7.0": {
+      "threshold": 7.0,
+      "roc_auc": 0.8800874959658622,
+      "pr_auc": 0.7811833074717213,
+      "mcc": 0.5649978323841228,
+      "balanced_accuracy": 0.7775352314698605,
+      "n_pos": 316,
+      "n_neg": 706,
+      "pos_rate": 0.30919765166340507
+    },
+    "6.5": {
+      "threshold": 6.5,
+      "roc_auc": 0.8822538626518873,
+      "pr_auc": 0.8663769891074604,
+      "mcc": 0.6064295220509449,
+      "balanced_accuracy": 0.8034258374674356,
+      "n_pos": 489,
+      "n_neg": 533,
+      "pos_rate": 0.47847358121330724
+    },
+    "6.0": {
+      "threshold": 6.0,
+      "roc_auc": 0.8777669155729351,
+      "pr_auc": 0.9215077356778112,
+      "mcc": 0.5926609831502192,
+      "balanced_accuracy": 0.7823720282047548,
+      "n_pos": 655,
+      "n_neg": 367,
+      "pos_rate": 0.6409001956947162
+    }
+  },
+  "bootstrap": {
+    "rmse": {
+      "metric": "rmse",
+      "point": 0.7312206145650555,
+      "lo": 0.6862066938293077,
+      "hi": 0.7767580518961055,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "mae": {
+      "metric": "mae",
+      "point": 0.5406978381661408,
+      "lo": 0.5104490139428645,
+      "hi": 0.5711049995720873,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "r2": {
+      "metric": "r2",
+      "point": 0.5556801121047341,
+      "lo": 0.4983691714335121,
+      "hi": 0.6069690879235089,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "spearman": {
+      "metric": "spearman",
+      "point": 0.7644359114197283,
+      "lo": 0.7333207748808337,
+      "hi": 0.791852892628981,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "pearson": {
+      "metric": "pearson",
+      "point": 0.7541694599706502,
+      "lo": 0.7220617702848345,
+      "hi": 0.7834736734625048,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "roc_auc": {
+      "metric": "roc_auc",
+      "point": 0.8800874959658622,
+      "lo": 0.8569675405593369,
+      "hi": 0.901359898030163,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "pr_auc": {
+      "metric": "pr_auc",
+      "point": 0.7811833074717213,
+      "lo": 0.7332034443972919,
+      "hi": 0.8229071227436094,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "mcc": {
+      "metric": "mcc",
+      "point": 0.5649978323841228,
+      "lo": 0.5081556571483389,
+      "hi": 0.6192245390563804,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    },
+    "balanced_accuracy": {
+      "metric": "balanced_accuracy",
+      "point": 0.7775352314698605,
+      "lo": 0.7483182911916378,
+      "hi": 0.8059888468014388,
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_skipped": 0,
+      "method": "percentile"
+    }
+  },
+  "runtime_seconds": 5014.3
+}
