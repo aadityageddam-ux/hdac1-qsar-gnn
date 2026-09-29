@@ -299,6 +299,58 @@ def verify_readme(models: dict[str, dict], comparison: dict) -> None:
         check(claim, present)
 
 
+def verify_multitarget() -> None:
+    """Re-derive the three-target replication claims from multitarget.json.
+
+    The README now leads with these numbers, so they get the same treatment as the
+    single-target ones: recomputed from the artifact rather than trusted as prose.
+    """
+    print()
+    print("[7] Multi-target replication")
+    path = RESULTS / "multitarget.json"
+    if not path.exists():
+        print("  SKIP  multitarget.json not present")
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    targets = payload["targets"]
+    check("three targets present", len(targets) == 3, f"{sorted(targets)}")
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    ratios = []
+    for short, block in targets.items():
+        scaffold = block["scaffold_split"]
+        random_split = block["random_split"]
+        optimism = block["optimism"]
+
+        # Optimism must equal scaffold RMSE minus random RMSE, recomputed here.
+        for model in ("random_forest", "chemprop"):
+            expected = scaffold[model]["rmse"] - random_split[model]["rmse"]
+            check(f"{short}: {model} optimism is scaffold minus random",
+                  abs(expected - optimism[model]) < 1e-9,
+                  f"{optimism[model]:+.4f}")
+        check(f"{short}: random split is easier than the scaffold split",
+              optimism["random_forest"] > 0 and optimism["chemprop"] > 0,
+              f"RF {optimism['random_forest']:+.4f}, CP {optimism['chemprop']:+.4f}")
+
+        ratio = block["optimism_ratio_rf_over_chemprop"]
+        ratios.append(ratio)
+        check(f"{short}: optimism ratio quoted in README",
+              f"{ratio:.2f}" in readme, f"{ratio:.2f}")
+
+        # The headline claim: the split changes the significance conclusion.
+        sig_scaffold = scaffold["delta_rf_minus_chemprop"]["significant"]
+        sig_random = random_split["delta_rf_minus_chemprop"]["significant"]
+        check(f"{short}: the split changes the significance conclusion",
+              sig_scaffold != sig_random,
+              f"scaffold sig={sig_scaffold}, random sig={sig_random}")
+
+    check("the forest captures less optimism than the D-MPNN on every target",
+          all(r < 1.0 for r in ratios), f"ratios {[round(r, 2) for r in ratios]}")
+    lo, hi = min(ratios), max(ratios)
+    check("README quotes the ratio range",
+          f"{lo:.2f}" in readme and f"{hi:.2f}" in readme, f"{lo:.2f}-{hi:.2f}")
+
+
 def main() -> None:
     print("=" * 78)
     print("VERIFICATION PASS - re-deriving every claim from the committed artifacts")
@@ -311,6 +363,7 @@ def main() -> None:
     verify_no_test_tuning()
     if protocol is not None:
         verify_readme(protocol[0], protocol[1])
+    verify_multitarget()
 
     print("\n" + "=" * 78)
     if flags:

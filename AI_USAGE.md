@@ -261,6 +261,51 @@ that I caught it than discover the earlier version in the git history. It is als
 demonstration in this repository of why the "just add the standard baseline" criticism was worth
 acting on: it did not strengthen my result, it deleted it.
 
+## Interaction 6: my own bug reversed a headline finding, twice
+
+Interaction 5 recorded that adding Chemprop overturned the claim that random splits flatter
+fingerprint models more than graph models. Extending the experiment to three targets overturned it
+again, in the opposite direction, and this time the cause was a bug I had written.
+
+`scripts/07_diagnostics.py` trained the neural models on the random split for an epoch budget that
+had been selected on the *scaffold* split:
+
+```python
+cp_epochs = int(cp_metrics["config"]["selected_epochs"])   # chosen on the SCAFFOLD split
+cp_model, _, _, _ = CP.train_once(
+    pd.concat([r_train, r_val], ignore_index=True), None, seed=0,
+    max_epochs=cp_epochs, use_early_stopping=False,
+)
+```
+
+The random split is an easier problem, so it supports a longer useful training run. Capping the
+neural models at the scaffold-derived epoch count under-trained them there, depressing their
+random-split scores and therefore their measured optimism. The random forest has no epoch
+selection, so its number was unbiased — meaning the bug biased *only* the neural rows, in exactly
+the direction that made the forest look uniquely sensitive to leakage. It manufactured the
+asymmetry I had reported.
+
+`scripts/10_multitarget.py` was written later and independently, and selects the epoch count on
+each split's own validation fold. When its numbers disagreed with the diagnostics run, that
+disagreement is what exposed the bug: the two scripts were measuring the same quantity and getting
+different answers, so one of them had to be wrong.
+
+With the fix, the asymmetry reverses and replicates on all three targets — the forest captures only
+0.66–0.76× the optimism the D-MPNN does. The mechanism is sensible in hindsight: a random split
+leaves near-duplicate analogues in the training set, and a higher-capacity graph model exploits
+them better than a bagged forest over a fixed fingerprint.
+
+Three things worth drawing out, since this is the most useful failure in the project:
+
+- **The bug was in the measurement, not the model.** Every model trained correctly; the comparison
+  between them was rigged by a protocol detail that looked like an implementation shortcut.
+- **It was caught by redundancy, not by review.** Nobody read the line and spotted it. Two scripts
+  computed the same quantity under different assumptions and disagreed, and the disagreement was
+  not dismissible.
+- **The original claim was the one I most wanted to be true.** It was the finding the README had
+  been restructured around, and it was the thing I would have led with in outreach. That is exactly
+  the kind of result that deserves a second implementation before it is believed.
+
 ## What was mine vs. AI-generated
 
 **Claude wrote effectively all of the code** in `src/` and `scripts/`, and the first drafts of this

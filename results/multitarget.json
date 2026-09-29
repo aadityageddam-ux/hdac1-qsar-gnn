@@ -16,7 +16,8 @@
       "bootstrap": true,
       "n_jobs": -1
     },
-    "note": "Reduced relative to the HDAC1 deep dive: 3 seeds not 5, Chemprop only, and the HDAC1 forest configuration reused rather than re-searched per target. Tests whether the split-dependence effect replicates, not each target's best achievable RMSE."
+    "note": "Reduced relative to the HDAC1 deep dive: 3 seeds not 5, Chemprop only, and the HDAC1 forest configuration reused rather than re-searched per target. Tests whether the split-dependence effect replicates, not each target's best achievable RMSE.",
+    "execution_note": "HDAC1 and HDAC6 were run sequentially; hERG was run as a concurrent process on the same machine. Identical code and protocol, so the results are comparable."
   },
   "targets": {
     "HDAC1": {
@@ -113,6 +114,196 @@
       },
       "optimism_ratio_rf_over_chemprop": 0.7605134084637636,
       "seconds": 46769.1
+    },
+    "HDAC6": {
+      "target_chembl_id": "CHEMBL1865",
+      "pref_name": "Protein deacetylase HDAC6",
+      "organism": "Homo sapiens",
+      "funnel": {
+        "fetched": 8493,
+        "confidence_9_human": 7972,
+        "n_rows_in": 7966,
+        "n_groups": 5727,
+        "n_groups_dropped_range": 218,
+        "n_groups_kept": 5509,
+        "n_groups_with_replicates": 899
+      },
+      "max_abs_pic50_minus_pchembl": 0.0054889189416078565,
+      "n_compounds": 5509,
+      "n_scaffold_groups": 2520,
+      "scaffold_split": {
+        "fold_sizes": {
+          "train": 3856,
+          "val": 827,
+          "test": 826
+        },
+        "random_forest": {
+          "rmse": 0.6513523346201531,
+          "spearman": 0.7214397904903137
+        },
+        "chemprop": {
+          "rmse": 0.6836645375540649,
+          "spearman": 0.6648118686024965,
+          "selected_epochs": 26
+        },
+        "delta_rf_minus_chemprop": {
+          "metric": "rmse",
+          "point_a": 0.6513523346201531,
+          "point_b": 0.6836645375540649,
+          "delta": -0.03231220293391179,
+          "lo": -0.05966919073292902,
+          "hi": -0.004433120763270095,
+          "p_value": 0.018,
+          "significant": true,
+          "favours": "a",
+          "n_boot": 2000,
+          "n_valid": 2000,
+          "label_a": "random forest",
+          "label_b": "Chemprop"
+        },
+        "test_to_train_similarity": {
+          "median": 0.6481481481481481,
+          "fraction_ge_0.85": 0.03631961259079903,
+          "n_identical_fingerprint": 1
+        }
+      },
+      "random_split": {
+        "fold_sizes": {
+          "train": 3856,
+          "val": 827,
+          "test": 826
+        },
+        "random_forest": {
+          "rmse": 0.5860149131431783,
+          "spearman": 0.8329017259207133
+        },
+        "chemprop": {
+          "rmse": 0.5852053984830691,
+          "spearman": 0.8148779972305522,
+          "selected_epochs": 35
+        },
+        "delta_rf_minus_chemprop": {
+          "metric": "rmse",
+          "point_a": 0.5860149131431783,
+          "point_b": 0.5852053984830691,
+          "delta": 0.0008095146601092562,
+          "lo": -0.026392608435454188,
+          "hi": 0.02762773337063328,
+          "p_value": 0.923,
+          "significant": false,
+          "favours": "neither",
+          "n_boot": 2000,
+          "n_valid": 2000,
+          "label_a": "random forest",
+          "label_b": "Chemprop"
+        },
+        "test_to_train_similarity": {
+          "median": 0.7818181818181819,
+          "fraction_ge_0.85": 0.23486682808716708,
+          "n_identical_fingerprint": 52
+        }
+      },
+      "optimism": {
+        "random_forest": 0.06533742147697474,
+        "chemprop": 0.0984591390709958
+      },
+      "optimism_ratio_rf_over_chemprop": 0.663599358002328,
+      "seconds": 12181.1
+    },
+    "hERG": {
+      "target_chembl_id": "CHEMBL240",
+      "pref_name": "Voltage-gated inwardly rectifying potassium channel KCNH2",
+      "organism": "Homo sapiens",
+      "funnel": {
+        "fetched": 10000,
+        "confidence_9_human": 9738,
+        "n_rows_in": 9735,
+        "n_groups": 7835,
+        "n_groups_dropped_range": 102,
+        "n_groups_kept": 7733,
+        "n_groups_with_replicates": 1177
+      },
+      "max_abs_pic50_minus_pchembl": 0.005483746814912038,
+      "n_compounds": 7733,
+      "n_scaffold_groups": 3948,
+      "scaffold_split": {
+        "fold_sizes": {
+          "train": 5413,
+          "val": 1160,
+          "test": 1160
+        },
+        "random_forest": {
+          "rmse": 0.6595559150498748,
+          "spearman": 0.5977419926781609
+        },
+        "chemprop": {
+          "rmse": 0.6998417014162751,
+          "spearman": 0.5983061467389025,
+          "selected_epochs": 26
+        },
+        "delta_rf_minus_chemprop": {
+          "metric": "rmse",
+          "point_a": 0.6595559150498748,
+          "point_b": 0.6998417014162751,
+          "delta": -0.040285786366400345,
+          "lo": -0.06809102357761372,
+          "hi": -0.013119535914664067,
+          "p_value": 0.004,
+          "significant": true,
+          "favours": "a",
+          "n_boot": 2000,
+          "n_valid": 2000,
+          "label_a": "random forest",
+          "label_b": "Chemprop"
+        },
+        "test_to_train_similarity": {
+          "median": 0.6349206349206349,
+          "fraction_ge_0.85": 0.04482758620689655,
+          "n_identical_fingerprint": 2
+        }
+      },
+      "random_split": {
+        "fold_sizes": {
+          "train": 5413,
+          "val": 1160,
+          "test": 1160
+        },
+        "random_forest": {
+          "rmse": 0.531917740435938,
+          "spearman": 0.7462456757166083
+        },
+        "chemprop": {
+          "rmse": 0.5272135167269544,
+          "spearman": 0.7333522476687484,
+          "selected_epochs": 32
+        },
+        "delta_rf_minus_chemprop": {
+          "metric": "rmse",
+          "point_a": 0.531917740435938,
+          "point_b": 0.5272135167269544,
+          "delta": 0.004704223708983601,
+          "lo": -0.021282305815106976,
+          "hi": 0.03300667118948921,
+          "p_value": 0.718,
+          "significant": false,
+          "favours": "neither",
+          "n_boot": 2000,
+          "n_valid": 2000,
+          "label_a": "random forest",
+          "label_b": "Chemprop"
+        },
+        "test_to_train_similarity": {
+          "median": 0.7796610169491526,
+          "fraction_ge_0.85": 0.16982758620689656,
+          "n_identical_fingerprint": 4
+        }
+      },
+      "optimism": {
+        "random_forest": 0.12763817461393678,
+        "chemprop": 0.17262818468932073
+      },
+      "optimism_ratio_rf_over_chemprop": 0.739382012523896,
+      "seconds": 16446.9
     }
   }
 }

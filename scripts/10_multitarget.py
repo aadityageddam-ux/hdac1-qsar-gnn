@@ -25,6 +25,7 @@ replicates in sign and rough magnitude, not what each target's best achievable R
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -177,7 +178,36 @@ def score_split(frame: pd.DataFrame, label: str) -> dict:
     }
 
 
+def parse_args() -> argparse.Namespace:
+    """Allow a subset of targets and a custom output file, so targets can run in parallel.
+
+    The per-target work is independent, so on a multi-core machine the targets are better
+    run as concurrent processes than sequentially. Each writes its own JSON, and the
+    results are merged afterwards.
+    """
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--targets", default="",
+        help="comma-separated short names (e.g. hERG). Default: all.",
+    )
+    parser.add_argument(
+        "--out", default="multitarget.json",
+        help="output filename inside results/.",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+    global OUT_JSON, TARGETS
+    OUT_JSON = RESULTS / args.out
+    if args.targets:
+        wanted = {name.strip().lower() for name in args.targets.split(",") if name.strip()}
+        TARGETS = tuple(spec for spec in TARGETS if spec[1].lower() in wanted)
+        if not TARGETS:
+            raise SystemExit(f"no targets matched {sorted(wanted)}")
+    print(f"targets: {[s[1] for s in TARGETS]}  ->  results/{args.out}", flush=True)
+
     t_start = time.time()
     payload = {
         "protocol": {

@@ -1,32 +1,37 @@
-# What the split changes, and what it doesn't: fingerprint and graph models for HDAC1
+# The split decides the answer: fingerprint vs graph models across three ChEMBL targets
 
 **Does a graph neural network learn anything about HDAC1 inhibition that a 2048-bit ECFP4 random
 forest does not — and how much does that answer depend on how the test set was chosen?**
 
-**Result: no, and the split changes how good every model looks without changing which one wins.**
-On a leak-free Murcko scaffold split of 6,816 ChEMBL compounds, three models — a tuned random
-forest, a hand-rolled GINE network, and Chemprop's D-MPNN — land within 0.006 pIC50 log units of
-each other, with **1 of 27 model-pair × metric comparisons reaching significance, which is what 27
-tests at α = 0.05 produce by chance.** Re-run the identical models on the identical data under a
-*random* split and every model improves by roughly 0.12–0.13 log units — about 17% lower RMSE, for
-free, from the evaluation protocol alone — while the forest and the D-MPNN remain tied.
+**Result: the split decides the answer, on every target tested.** Across three ChEMBL targets —
+HDAC1, HDAC6 and hERG — whether a random forest and Chemprop's D-MPNN differ significantly flips
+depending on whether compounds are assigned to folds by Murcko scaffold or at random. In all three
+cases the conclusion changes. And the direction is systematic: **the graph model gains consistently
+more from a random split than the fingerprint baseline does** (the forest's optimism is 0.66–0.76×
+the D-MPNN's, 3 targets out of 3), so a lenient split flatters graph models specifically.
 
-So the quantity worth reporting is not which architecture wins. It is that **a random-split
-evaluation of this dataset reports ~17% better RMSE than an honest one**, on identical data and
-identical models.
+On the honest scaffold split of HDAC1's 6,816 compounds, three models — a tuned random forest, a
+hand-rolled GINE network, and Chemprop's D-MPNN — land within 0.006 pIC50 log units of each other,
+with 1 of 27 model-pair × metric comparisons reaching significance, which is what 27 tests at
+α = 0.05 produce by chance.
 
-> **A correction, kept in place because it is the most useful thing in this repository.** An
-> earlier version of this README claimed something stronger: that a random split flatters the
-> fingerprint model *more than twice as much* as a graph model, enough to reverse the apparent
-> winner. That was measured against my hand-rolled GINE network, and it did not survive adding
-> Chemprop. The D-MPNN's optimism (+0.1246) is essentially identical to the forest's (+0.1285),
-> and under a random split the two are still tied. The apparent asymmetry was a property of my
-> weaker model, not of graph models. The full numbers are below and the episode is written up in
-> `AI_USAGE.md`.
+> **Two corrections, kept visible because they are the most useful thing in this repository.**
+> This finding was wrong twice before it was right, and both errors are instructive.
+>
+> *First*, an earlier version claimed the asymmetry ran the other way — that random splits flatter
+> the *fingerprint* model more than twice as much as a graph model. That was measured against the
+> hand-rolled GINE network, which is the weakest model here.
+>
+> *Second*, the diagnostic that produced it had a bug of my own making: the neural models were
+> trained on the random split for an epoch budget selected on the *scaffold* split, which
+> under-trains them on the easier split and understates their optimism. The random forest has no
+> epoch selection, so only the neural rows were biased — in exactly the direction that made the
+> forest look uniquely leakage-sensitive. Once each split selects its own epoch count on its own
+> validation fold, the asymmetry reverses and replicates 3/3. Written up in `AI_USAGE.md`.
 
-## The two results
+## The results
 
-### 1. Three models, no significant difference
+### 1. On HDAC1, three models are indistinguishable
 
 Test fold, 1,022 compounds. Every model is scored by the same code (`src/evaluate.py`), on the
 same split (verified by hash), with the same 2,000 bootstrap resamples. All three were tuned or
@@ -55,36 +60,43 @@ not establish that two models are indistinguishable. The paired bootstrap scores
 same resamples and takes the difference, which is the correct test — and here it confirms the tie
 rather than merely failing to reject it.
 
-### 2. A random split inflates every model by about the same amount
+### 2. The split changes the conclusion, on every target tested
 
-The same models, the same data, the same fold sizes — differing only in how compounds were
-assigned:
+Three ChEMBL targets, identical protocol (`scripts/10_multitarget.py`): the same cleaning, the same
+deterministic Murcko splitter, three seeds, the random forest against Chemprop's D-MPNN. HDAC6 is
+the same enzyme family as HDAC1; hERG is a different target class entirely.
 
-| Model | random split | scaffold split | optimism |
+**Does the fingerprint baseline differ significantly from the graph model?**
+
+| Target | n | scaffold split | random split |
 | --- | --- | --- | --- |
-| Random forest | 0.6081 | 0.7367 | **+0.1285** |
-| Chemprop D-MPNN | 0.6066 | 0.7312 | **+0.1246** |
-| GINE graph neural network | 0.6796 | 0.7357 | +0.0560 |
+| HDAC1 | 6,816 | tie (Δ −0.0005, p = 0.966) | **Chemprop wins** (Δ +0.0404, p = 0.010) |
+| HDAC6 | 5,509 | **forest wins** (Δ −0.0323, p = 0.018) | tie (Δ +0.0008, p = 0.923) |
+| hERG | 7,733 | **forest wins** (Δ −0.0403, p = 0.004) | tie (Δ +0.0047, p = 0.718) |
 
-Two things to read off this.
+In all three, the answer changes with the split. Twice the honest split reveals a real difference
+that the random split hides; once the random split manufactures one that the honest split does not
+support. A random split is not simply "easier" — it is differently wrong each time.
 
-**The optimism is large.** A random split buys roughly 0.125 log units of apparent accuracy on
-identical data with identical models — about a 17% reduction in RMSE. Any QSAR result reported
-under a random split on a congeneric single-target corpus should be discounted by roughly that
-much before being compared with anything else. This is the number this repository exists to
-measure, and it is measured rather than asserted.
+**How much apparent accuracy does a random split buy?**
 
-**The optimism is not architecture-selective.** The forest and the field-standard D-MPNN gain
-almost exactly the same amount, and they are tied under *both* splits (0.6081 vs 0.6066 random;
-0.7367 vs 0.7312 scaffold). Changing the split changes how good everything looks; it does not
-change the ranking.
+| Target | forest optimism | Chemprop optimism | forest / Chemprop |
+| --- | --- | --- | --- |
+| HDAC1 | +0.1301 | +0.1711 | 0.76 |
+| HDAC6 | +0.0653 | +0.0985 | 0.66 |
+| hERG | +0.1276 | +0.1726 | 0.74 |
 
-The GINE network is the exception, and the explanation is deflationary rather than interesting: it
-gains least from a random split (+0.056) because it is the weakest model *under* the random split
-(0.6796 against ~0.607 for the other two). It has less to gain from near-duplicate analogues
-because it is less able to exploit them, which is a statement about its capacity, not about graph
-models being more robust to leakage. Reading that gap as an architectural property is exactly the
-mistake the correction at the top of this README describes.
+Two things replicate cleanly. The optimism is **large** — 0.065 to 0.173 log units of free apparent
+accuracy from the evaluation protocol alone. And it is **asymmetric in the graph model's favour**:
+the forest captures only about 70% as much of it, in all three targets.
+
+The mechanism is plausible and deflationary. A random split scatters near-duplicate analogues
+across train and test; a higher-capacity graph model interpolates between them more effectively
+than a bagged forest over a fixed 2048-bit fingerprint can. So graph models are *more sensitive to
+the evaluation protocol* than fingerprint baselines — they look relatively better when the split is
+lenient and relatively worse when it is strict. That is precisely the failure mode that makes a
+random-split GNN-beats-baseline result hard to trust, and it is the practical reason this
+repository exists.
 
 ## Why the models tie
 
@@ -318,9 +330,10 @@ report.ipynb          # loads artifacts and renders; computes nothing
 - **The learning curve uses a reduced protocol** — two seeds and a capped epoch budget, against
   five seeds and a 300-epoch cap for the headline. It answers which way performance trends with
   data volume, not what the exact RMSE is at each size.
-- **One target, one assay type, in silico only.** The split-dependence result in particular is
-  measured on a single congeneric corpus; whether the asymmetry generalises to structurally
-  diverse targets is untested here and is the obvious next experiment.
+- **Three targets, all congeneric, in silico only.** The split-dependence result replicates
+  across HDAC1, HDAC6 and hERG, but all three have similar nearest-neighbour density (median
+  ~0.79-0.81). Whether the asymmetry holds on a genuinely structurally diverse corpus is untested
+  here and is the obvious next experiment.
 - **n ≈ 6.8k is small by deep-learning standards.** The most likely reading of this result is that
   the graph models are data-limited rather than architecturally unsuited, which is what the
   learning curve is for.

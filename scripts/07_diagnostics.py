@@ -178,17 +178,28 @@ def main() -> None:
     r_train_graphs, _ = G.smiles_to_graphs(r_train.canonical_smiles.tolist(), r_train.pIC50.to_numpy())
     r_val_graphs, _ = G.smiles_to_graphs(r_val.canonical_smiles.tolist(), r_val.pIC50.to_numpy())
     r_test_graphs, _ = G.smiles_to_graphs(r_test.canonical_smiles.tolist(), ry_test)
+    # Select the epoch count on the RANDOM split's own validation fold. Reusing the
+    # scaffold-selected count here under-trains the neural models on the easier split and
+    # understates their optimism - which biases the very quantity this control measures,
+    # and in the direction that makes the random forest look uniquely leakage-sensitive.
+    _, g_sel = G.train_model(
+        r_train_graphs, r_val_graphs, G.GNNConfig(**best_gnn_config), seed=0
+    )
+    g_epochs_random = int(g_sel.best_epoch)
     gmodel, gtr = G.train_model(
         r_train_graphs + r_val_graphs, None, G.GNNConfig(**best_gnn_config),
-        seed=0, fixed_epochs=best_epoch,
+        seed=0, fixed_epochs=g_epochs_random,
     )
     gnn_random_rmse = ev.compute_metric("rmse", ry_test, G.predict(gmodel, r_test_graphs, gtr))
 
     cp_metrics = json.loads((RESULTS / "metrics_chemprop.json").read_text(encoding="utf-8"))
-    cp_epochs = int(cp_metrics["config"]["selected_epochs"])
+    cp_epochs_scaffold = int(cp_metrics["config"]["selected_epochs"])
+    _, _, _, cp_epochs_random = CP.train_once(
+        r_train, r_val, seed=0, max_epochs=CP.MAX_EPOCHS, use_early_stopping=True
+    )
     cp_model, _, _, _ = CP.train_once(
         pd.concat([r_train, r_val], ignore_index=True), None, seed=0,
-        max_epochs=cp_epochs, use_early_stopping=False,
+        max_epochs=int(cp_epochs_random), use_early_stopping=False,
     )
     cp_random_rmse = ev.compute_metric("rmse", ry_test, CP.predict(cp_model, r_test))
 
@@ -224,7 +235,13 @@ def main() -> None:
                 "n_seeds": len(CURVE_SEEDS),
                 "gnn_max_epochs": CURVE_MAX_EPOCHS,
                 "gnn_patience": CURVE_PATIENCE,
-                "note": (
+                "epochs_selected": {
+                "gine_scaffold": int(gnn_metrics["tuning"]["best"]["best_epoch"]),
+                "gine_random": g_epochs_random,
+                "chemprop_scaffold": cp_epochs_scaffold,
+                "chemprop_random": int(cp_epochs_random),
+            },
+            "note": (
                     "The curve uses 2 seeds and a capped epoch budget, unlike the headline "
                     "result which uses 5 seeds and patience 40 with a 300-epoch cap. The "
                     "curve answers which way performance is trending with data volume; it "
