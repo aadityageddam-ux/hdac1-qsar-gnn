@@ -1,6 +1,6 @@
-"""Build the deterministic Murcko scaffold split and seal it with a SHA-256 manifest.
+"""Build the Murcko scaffold split and seal it with a SHA-256 manifest.
 
-Reads data/hdac1_clean.csv; writes data/split_assignment.csv,
+Reads data/hdac1_clean.csv. Writes data/split_assignment.csv,
 results/split_manifest.json, results/test_nn_similarity.csv and
 results/gate_report.json.
 """

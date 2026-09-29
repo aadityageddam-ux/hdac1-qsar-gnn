@@ -1,18 +1,15 @@
-"""Phase 6b: the two diagnostics that explain a result rather than just reporting one.
+"""The learning curve: test error against training-set size.
 
-1. **Learning curve.** Test error against training-set size, for both models. This is
-   what separates "the GNN is architecturally worse here" from "the GNN is data-limited
-   here", and those are very different conclusions. Subsampling is done BY SCAFFOLD
-   GROUP, never by compound: drawing individual compounds would put members of the same
-   scaffold group back on both sides and quietly reintroduce the leakage the split
-   exists to prevent.
+This is what separates "the graph models are worse here" from "the graph models are
+data-limited here", which are very different conclusions.
 
-2. **Random-split control** - now in `07b_random_split_control.py`. It is a handful of
-   fits rather than hours of retraining, and it has already needed recomputing once, so it
-   is kept separate and can be rerun without paying for the learning curve again.
+Subsampling is done by whole scaffold group, never by compound. Drawing individual
+compounds would put members of the same group back on both sides and quietly reintroduce
+exactly the leakage the split exists to stop.
 
-This script retrains models and takes a while, which is exactly why it is separate from
-06_compare.py - the headline table stays reproducible in seconds.
+The random-split control used to live here and now sits in 07b_random_split_control.py.
+The curve retrains at five training-set sizes and runs for hours; the control is a handful
+of fits and has already needed recomputing twice, so it's better off separate.
 """
 
 from __future__ import annotations

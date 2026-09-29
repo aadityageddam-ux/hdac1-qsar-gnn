@@ -1,16 +1,15 @@
-"""Figure helpers for the baseline-vs-GNN comparison.
+"""Figures.
 
-Generic on purpose: every function takes arrays or frames and returns a Matplotlib
-figure, so nothing here knows about HDAC1 specifically.
+Generic - every function takes arrays or frames and hands back a Matplotlib figure, so
+nothing in here knows about HDAC1.
 
-Two conventions are enforced rather than left to the call site, because both are ways
-a model comparison quietly flatters itself:
+Two things are enforced here rather than left to the caller, because both are ways a
+comparison quietly flatters itself:
 
-* Parity plots for two models share one set of axis limits and one colour normalisation
-  (``shared_limits`` / ``shared_norm``). Per-panel autoscaling makes a worse model look
-  comparable to a better one.
-* Error bars are always the bootstrap interval actually computed by ``src.evaluate``,
-  never a re-derived standard error.
+* Parity panels share axis limits and one colour scale. Letting each panel autoscale
+  makes a worse model look comparable to a better one.
+* Error bars are always the bootstrap interval src/evaluate.py actually computed, never
+  a standard error I worked out separately.
 """
 
 from __future__ import annotations
@@ -41,8 +40,7 @@ __all__ = [
 FIG_DPI = 160
 SAVE_KWARGS = {"dpi": FIG_DPI, "bbox_inches": "tight"}
 
-# One colour per model, used consistently across every figure so the reader never has
-# to re-learn the legend.
+# One colour per model everywhere, so you don't have to re-learn the legend per figure.
 MODEL_COLOURS: dict[str, str] = {
     "rf": "#1f6f8b",
     "gnn": "#c1542d",
@@ -75,12 +73,12 @@ def save_figure(fig: plt.Figure, path: str | Path) -> Path:
 
 
 def resolve_colour(label: str) -> str | None:
-    """Map a human-readable model label to its fixed colour.
+    """Model label to its fixed colour.
 
-    Matches known keys as substrings of the lowercased label rather than taking the first
-    word: the first word of "Random forest (ECFP4 + descriptors)" is "random" and of
-    "GINE graph neural network" is "gine", neither of which is a colour key, so a
-    first-word lookup silently returns None for both and lets Matplotlib pick.
+    Substring match on the whole lowercased label, not the first word. First words here
+    are "random", "gine" and "chemprop", none of which were colour keys, so a first-word
+    lookup quietly returned None and let Matplotlib pick - which is how I ended up with
+    two models the same shade of blue.
     """
     key = label.lower()
     for alias, colour in (
@@ -112,10 +110,10 @@ def parity_panels(
     colour_label: str = "max Tanimoto to train",
     title: str | None = None,
 ) -> plt.Figure:
-    """Predicted-vs-true panels on identical axes and one shared colour scale.
+    """Predicted vs true, same axes and colour scale across panels.
 
-    Divergent axes are the standard way a parity plot lies, so the limits are computed
-    once over every panel's data and applied to all of them.
+    Different axes per panel is the usual way a parity plot lies, so the limits get
+    computed once over everything and applied to all of them.
     """
     yt = np.asarray(y_true, dtype=float)
     lim = _shared_limits(yt, *[s.y_pred for s in series])
@@ -157,19 +155,18 @@ def learning_curve(
     ylabel: str = "test RMSE (pIC50 log units)",
     title: str | None = None,
 ) -> plt.Figure:
-    """Test error against training-set size, mean with a +/- 1 sd band per model.
+    """Test error vs training-set size, mean and +/- 1 sd band per model.
 
-    ``curves`` maps a model label to ``(means, sds)`` across ``fractions``. The x axis is
-    labelled in compounds as well as percent, because "is this model data-limited?" is a
-    question about absolute n, not about a ratio.
+    curves maps a label to (means, sds) across fractions. The x axis shows compounds as
+    well as percent - "is this data-limited?" is a question about actual n, not a ratio.
     """
     fr = np.asarray(fractions, dtype=float)
     fig, ax = plt.subplots(figsize=(7.2, 4.8))
     for label, (means, sds) in curves.items():
         m = np.asarray(means, dtype=float)
         s = np.asarray(sds, dtype=float)
-        # Draw the line first, then read its realised colour, so the +/- sd band can never
-        # end up a different colour from the line it belongs to.
+        # Draw the line first and read its actual colour back, so the sd band can't end up
+        # a different colour from its own line.
         (line,) = ax.plot(fr * 100, m, marker="o", lw=1.8, label=label, color=resolve_colour(label))
         ax.fill_between(fr * 100, m - s, m + s, alpha=0.18, color=line.get_color(), lw=0)
     ax.set_xlabel("training set used (%)")
@@ -197,9 +194,9 @@ def stratified_bars(
 ) -> plt.Figure:
     """Grouped bars per similarity bin, with asymmetric bootstrap intervals.
 
-    ``errors`` maps a label to ``(lo, hi)`` absolute interval bounds, which are converted
-    to the offsets Matplotlib expects. Passing the interval rather than a symmetric sd
-    keeps the drawn bar identical to the number reported in the table.
+    errors maps a label to (lo, hi) bounds, converted to the offsets Matplotlib wants.
+    Passing the real interval instead of a symmetric sd keeps the drawn bar the same as
+    the number in the table.
     """
     labels = list(values)
     n_groups = len(bin_labels)
@@ -239,11 +236,10 @@ def error_distributions(
     pair: tuple[str, str] | None = None,
     title: str | None = None,
 ) -> plt.Figure:
-    """Absolute-residual ECDFs plus a model-vs-model residual scatter.
+    """Absolute-residual ECDFs, plus a model-vs-model residual scatter.
 
-    The scatter is the informative panel: strongly correlated residuals mean both models
-    are defeated by the same compounds, which points at the data rather than at either
-    architecture.
+    The scatter is the useful one. If the residuals correlate strongly, both models are
+    losing on the same compounds, which points at the data rather than the architectures.
     """
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.8))
 
@@ -290,10 +286,10 @@ def split_diagnostics(
     max_similarity: Sequence[float],
     flag_threshold: float = 0.85,
 ) -> plt.Figure:
-    """The leak-free argument, drawn: label shift, scaffold-group sizes, and NN similarity.
+    """The leak-free argument as a picture: label shift, group sizes, NN similarity.
 
-    This is the first figure in the README because it is the evidence that the split did
-    what it claims, and it should be checkable before any model number is read.
+    First figure in the README, because it's the evidence the split did what I say it
+    did, and you should be able to check that before reading any model number.
     """
     fig, axes = plt.subplots(1, 3, figsize=(15.0, 4.4))
 
@@ -346,11 +342,10 @@ def importance_split(
     descriptor_importance: float,
     top_descriptors: Mapping[str, float] | None = None,
 ) -> plt.Figure:
-    """How the forest divides its attention between fingerprint bits and bulk descriptors.
+    """Where the forest's importance goes: fingerprint bits vs the 12 descriptors.
 
-    Relevant because 12 descriptors compete with 2048 bits for split candidates; if the
-    descriptors carry most of the signal, the headline comparison is really about bulk
-    properties rather than about substructure.
+    12 descriptors are competing with 2048 bits for split candidates. If the descriptors
+    carry most of it, the headline is really about bulk properties, not substructure.
     """
     ncols = 1 if not top_descriptors else 2
     fig, axes = plt.subplots(1, ncols, figsize=(6.0 * ncols, 4.4), squeeze=False)

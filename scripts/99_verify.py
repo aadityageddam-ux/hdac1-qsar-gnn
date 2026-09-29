@@ -1,20 +1,21 @@
-"""The executable proof. Run this before trusting any number in this repository.
+"""Run this before believing any number in this repo.
 
-It re-derives, from the committed artifacts alone, every claim the README makes:
+It re-derives, from the committed artifacts alone:
 
-* the split artifact still hashes to what the manifest recorded;
+* the split still hashes to what the manifest recorded;
 * the folds are disjoint by scaffold, structure and identifier;
-* the two models consumed the identical split and the identical scoring code;
-* neither model read the test fold more than once, and neither tuned on it;
-* the protocol was symmetric (same seed count, both refit on train + val);
-* the evaluation harness itself behaves correctly on synthetic inputs where the
-  right answer is known in advance;
+* every model used the same split and the same scoring code;
+* no model read the test fold more than once, and none of them tuned on it;
+* the protocol was symmetric - same seed count, all refit on train + val;
+* the scoring code itself gives known answers on synthetic inputs;
+* the optimism control didn't fall into either of the two protocol traps that reversed
+  the headline finding;
 * every number quoted in the README matches the JSON it came from.
 
-Exit code 0 means all of that held. Anything else means it did not.
+Exit 0 means all of that held. Anything else means it didn't.
 
-Deliberately re-derives rather than re-reads: a verification pass that trusted the same
-summary the README was written from would prove nothing.
+It re-derives rather than re-reads on purpose. A check that trusted the same summary the
+README was written from would prove nothing.
 """
 
 from __future__ import annotations

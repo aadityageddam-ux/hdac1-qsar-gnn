@@ -1,14 +1,14 @@
-"""Deterministic RDKit standardization of SMILES into a canonical parent structure.
+"""RDKit standardization: SMILES in, canonical parent structure out.
 
-Pipeline: Cleanup -> FragmentParent -> Uncharger -> RemoveStereochemistry ->
-canonical SMILES + InChIKey.
+Cleanup -> FragmentParent -> Uncharger -> RemoveStereochemistry -> canonical SMILES and
+InChIKey.
 
-`FragmentParent` is used rather than `SaltRemover`: SaltRemover works from a fixed
-salt list and silently leaves unlisted counterions attached, so the same parent
-compound can hash to two different fingerprints. FragmentParent is list-free and
-deterministically prefers the organic parent fragment.
+FragmentParent rather than SaltRemover. SaltRemover works off a fixed salt list and
+quietly leaves anything not on it attached, so the same parent can end up with two
+different fingerprints. FragmentParent needs no list and deterministically picks the
+organic parent.
 
-Generic: takes SMILES strings and dataframes, not any particular target.
+Generic - takes SMILES and dataframes, not a target.
 """
 
 from __future__ import annotations
@@ -21,33 +21,31 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
-# RDKit prints parse/valence warnings to stderr for every bad record; the pipeline
-# records the failure reason itself, so the global stream is silenced.
+# RDKit writes a warning to stderr for every bad record. We record the failure reason
+# ourselves, so silence it.
 RDLogger.DisableLog("rdApp.*")
 
-# Elements plausible in a small-molecule inhibitor series. Anything outside this
-# set (metals, unusual main-group atoms) is a reagent, a complex, or a data error.
+# Elements you'd actually expect in a small-molecule inhibitor series. Anything else -
+# metals, odd main-group atoms - is a reagent, a complex, or a data error.
 ALLOWED_ELEMENTS: frozenset[str] = frozenset(
     {"H", "B", "C", "N", "O", "F", "Si", "P", "S", "Cl", "Se", "Br", "I"}
 )
 
 MIN_HEAVY_ATOMS = 5
-# The 100-heavy-atom ceiling is deliberately generous: it keeps the macrocyclic
-# HDAC inhibitor classes (romidepsin, trapoxin, apicidin) that a molecular-weight
-# cut would discard.
+# 100 heavy atoms is a generous ceiling on purpose - it keeps the macrocyclic HDAC
+# inhibitors (romidepsin, trapoxin, apicidin) that a molecular-weight cut would throw out.
 MAX_HEAVY_ATOMS = 100
 
-# If the second-largest fragment is at least this fraction of the largest, the
-# record is a genuine two-component mixture rather than a salt, and choosing a
-# "parent" would be arbitrary.
+# If the second-largest fragment is at least this fraction of the largest, it's a real
+# two-component mixture rather than a salt, and picking a "parent" would be arbitrary.
 MIXTURE_SIZE_RATIO = 0.8
 
 # pIC50 = 9 - log10(IC50 in nM); i.e. -log10(IC50 in M).
 PIC50_OFFSET = 9.0
 
-# Published inter-laboratory reproducibility of ChEMBL IC50 data is ~0.5-0.7 log
-# SD (Kramer 2012, Kalliokoski 2013). 1.0 log is about 2 SD: beyond that, the
-# replicate measurements are not measurements of the same quantity.
+# Published inter-lab reproducibility for ChEMBL IC50 is ~0.5-0.7 log SD (Kramer 2012,
+# Kalliokoski 2013). 1.0 log is roughly 2 SD - past that, the replicates aren't measuring
+# the same thing.
 MAX_PIC50_RANGE = 1.0
 
 _UNCHARGER = rdMolStandardize.Uncharger()
@@ -125,8 +123,8 @@ def standardize_smiles(smiles: str) -> StandardizedMolecule:
     if mol is None:
         return _failure(smiles, "cleanup_failure")
 
-    # Checked before FragmentParent: after it, only one fragment is left and the
-    # evidence that the record was a two-component mixture has been discarded.
+    # Has to run before FragmentParent - after it there's only one fragment left and the
+    # evidence that this was a two-component mixture is gone.
     if _is_genuine_mixture(mol):
         return _failure(smiles, "genuine_mixture")
 
@@ -179,8 +177,8 @@ def standardize_frame(
     if smiles_column not in frame.columns:
         raise StandardizationError(f"Column {smiles_column!r} not in {list(frame.columns)}")
 
-    # The same input SMILES recurs across replicate measurements; standardizing
-    # each distinct string once turns ~9k calls into ~7k.
+    # The same SMILES shows up across replicate measurements, so cache by string - takes
+    # it from ~9k calls to ~7k.
     cache: dict[str, StandardizedMolecule] = {}
     records: list[StandardizedMolecule] = []
     for smiles in frame[smiles_column].tolist():
@@ -219,10 +217,10 @@ def aggregate_by_key(
     max_range: float = MAX_PIC50_RANGE,
     carry_columns: tuple[str, ...] = (),
 ) -> tuple[pd.DataFrame, dict[str, int]]:
-    """Collapse replicate measurements to a per-key median, dropping inconsistent groups.
+    """Collapse replicates to a per-key median, dropping groups that disagree too much.
 
-    The median, not the mean, is used: it is robust to a single transcription error
-    in a replicate set, which the mean is not.
+    Median rather than mean - one transcription error in a replicate set drags the mean
+    and doesn't touch the median.
     """
     for column in (key_column, value_column, *carry_columns):
         if column not in frame.columns:
@@ -238,8 +236,8 @@ def aggregate_by_key(
         }
     )
     for column in carry_columns:
-        # First row in a deterministic sort order: replicates of one InChIKey may
-        # carry different ChEMBL ids or input SMILES, and one must be chosen.
+        # Replicates of one InChIKey can carry different ChEMBL ids or input SMILES, so
+        # take the first in a deterministic order.
         aggregated[column] = grouped[column].min()
 
     aggregated = aggregated.reset_index()

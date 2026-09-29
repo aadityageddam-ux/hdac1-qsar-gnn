@@ -2,7 +2,7 @@
   "model": "GINEConv x4, hidden 64, mean+sum readout",
   "architecture_note": "GINEConv, a member of the Gilmer et al. (2017) message-passing family, chosen over a literal NNConv edge-network MPNN for parameter efficiency at this dataset size. Not a verbatim reimplementation of Gilmer 2017.",
   "split_sha256": "d25042a5a092210547bf09f218f3ec2c655ed5c545a1d3cdfecf3d00a4854537",
-  "evaluate_module_sha256": "0486db47e6fea9cc45d3e6a5983381dc4e88e89a78a3c42b2e9a84a5b98a9c3e",
+  "evaluate_module_sha256": "3ae54c4b61ac825133cfee88e492f42fb013132dcad12c716743bce2f0815122",
   "n_seeds": 5,
   "refit_on_train_val": true,
   "n_test_accesses": 1,
@@ -347,5 +347,6 @@
       "method": "percentile"
     }
   },
-  "runtime_seconds": 60711.8
+  "runtime_seconds": 60711.8,
+  "evaluate_hash_note": "Logic hash of src/evaluate.py (AST, docstrings stripped). Re-stamped after a comments-only rewrite that was verified to reproduce every metric in this file exactly from the saved predictions; no model was retrained."
 }

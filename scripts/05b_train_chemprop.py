@@ -1,23 +1,22 @@
-"""Phase 5b: Chemprop's D-MPNN — the field-standard graph baseline — on the same split.
+"""Chemprop's D-MPNN - the graph model the field actually benchmarks against.
 
-Why this script exists. The original comparison pitted a hand-rolled GINE network against the
-random forest, which leaves an obvious objection open: that the GNN lost because it was a weak
-GNN, not because graph models struggle at this data size. Chemprop's directed message-passing
-network (Yang et al., J Chem Inf Model 2019) is the reference implementation the field actually
-benchmarks against, so running it closes that objection with the standard tool rather than
-with an argument.
+Why this exists: the original comparison was my hand-rolled GINE network against the
+forest, which leaves an obvious objection open - maybe the graph side lost because it was
+a weak graph model, not because graph models struggle at this data size. Chemprop (Yang
+et al., J Chem Inf Model 2019) is the reference implementation, so running it closes that
+objection with the standard tool instead of with an argument.
 
-Protocol is identical to 05_train_gnn.py, deliberately:
-  * the split arrives through the same SHA-256-verified contract;
-  * the epoch count is selected on the validation fold only;
-  * the model is refit on train + val, as the forest and the GINE network both are;
+Same protocol as 05_train_gnn.py:
+  * the split comes through the same SHA-256-verified contract;
+  * the epoch count is chosen on val only;
+  * refit on train + val, like the other two;
   * five seeds, mean prediction;
-  * every metric comes from src/evaluate.py.
+  * every metric from src/evaluate.py.
 
-One deliberate asymmetry, stated rather than hidden: no hyperparameter search is run here. The
-Chemprop defaults are the authors' recommended configuration and are what the field cites, so
-using them unmodified is the fairest available reference point, and searching over them would
-cost hours of CPU for a baseline whose purpose is to be standard rather than optimal.
+One difference, worth saying out loud: no hyperparameter search. The Chemprop defaults are
+what the authors recommend and what the field cites, so using them unmodified is the
+fairest reference point I can offer. Searching over them would burn hours of CPU and turn
+a reference into a tuned competitor.
 """
 
 from __future__ import annotations

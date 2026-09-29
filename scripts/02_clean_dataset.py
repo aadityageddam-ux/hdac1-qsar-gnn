@@ -1,7 +1,7 @@
-"""Standardize HDAC1 structures, aggregate replicates by InChIKey, and gate the result.
+"""Standardize structures, aggregate replicates by InChIKey, gate the result.
 
-Reads data/raw_activities.csv, writes data/hdac1_clean.csv and updates
-data/provenance.json with the cleaning funnel.
+Reads data/raw_activities.csv, writes data/hdac1_clean.csv, and adds the cleaning funnel
+to data/provenance.json.
 """
 
 from __future__ import annotations

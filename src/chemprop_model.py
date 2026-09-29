@@ -1,13 +1,13 @@
-"""Chemprop D-MPNN wrapper: datapoints, model construction, training and prediction.
+"""Chemprop D-MPNN wrapper: datapoints, model, training, prediction.
 
-Generic on purpose - it takes frames of SMILES and labels, and knows nothing about any
-particular target. Both scripts/05b_train_chemprop.py and scripts/07_diagnostics.py use
-these functions, so the learning curve and the headline result are produced by identical
-model code rather than by two copies that could drift apart.
+Generic - takes frames of SMILES and labels, knows nothing about a particular target.
+Everything that trains a D-MPNN imports from here, so the headline run, the learning
+curve and the multi-target replication all use the same model code rather than three
+copies that could drift.
 
-Chemprop 2.x at author-default hyperparameters: bond-level message passing, mean
-aggregation, a regression FFN. The defaults are the configuration the field benchmarks
-against, which is what makes this a reference point rather than a tuned competitor.
+Chemprop 2.x at the authors' defaults: bond-level message passing, mean aggregation,
+regression FFN. The defaults are what the field benchmarks against, which is the point -
+this is meant to be a reference, not a tuned competitor.
 """
 
 from __future__ import annotations
@@ -76,10 +76,10 @@ def train_once(
     max_epochs: int,
     use_early_stopping: bool,
 ) -> tuple[models.MPNN, cp_data.MoleculeDataset, list[float], int]:
-    """Train one D-MPNN, returning the model, the fitted scaler dataset and the val curve.
+    """Train one D-MPNN. Returns the model, the scaled dataset and the val curve.
 
-    Target scaling is fitted on the fit fold only and applied to validation, so the scaler
-    never sees data the model is scored on.
+    Target scaling is fit on the fit fold only and then applied to val, so the scaler
+    never sees anything the model gets scored on.
     """
     pl.seed_everything(seed, workers=True)
     random.seed(seed)

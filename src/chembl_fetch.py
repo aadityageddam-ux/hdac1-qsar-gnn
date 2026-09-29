@@ -1,9 +1,8 @@
-"""Retrieve bioactivity records and assay metadata from the ChEMBL REST API.
+"""Pull bioactivity records and assay metadata from the ChEMBL REST API.
 
-Generic: takes a target id and filter parameters, and is not specific to any one
-target. All HDAC1-specific values live in `scripts/`.
+Generic - takes a target id and filter params. Anything HDAC1-specific lives in scripts/.
 
-Data source: ChEMBL, https://www.ebi.ac.uk/chembl/ (unauthenticated public API).
+Source: ChEMBL, https://www.ebi.ac.uk/chembl/ (public API, no auth needed).
 """
 
 from __future__ import annotations
@@ -23,21 +22,20 @@ TARGET_ENDPOINT = "target"
 # The REST API caps `limit` at 1000; anything larger is silently clamped.
 PAGE_LIMIT = 1000
 
-# `assay_chembl_id__in` is passed as a comma-joined list in the query string.
-# 200 ids x ~14 characters keeps the URL comfortably under any proxy limit.
+# assay_chembl_id__in goes in the query string as a comma-joined list. 200 ids at ~14
+# characters each keeps the URL well under any proxy limit.
 ASSAY_ID_CHUNK_SIZE = 200
 
 DEFAULT_TIMEOUT = 120
 MAX_RETRIES = 5
 BACKOFF_CAP_SECONDS = 30
 
-# 429 = EBI rate limiting; 500/502/503/504 = transient gateway or backend faults
-# behind the EBI load balancer. Everything else (400 bad filter, 404 bad
-# endpoint) is a programming error and is raised immediately.
+# 429 is EBI rate limiting, 500/502/503/504 are transient faults behind their load
+# balancer. Anything else (400 bad filter, 404 bad endpoint) is my bug, so raise it now.
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 
-# Columns kept from the activity endpoint. The endpoint returns ~45 fields per
-# record; these are the ones any downstream QSAR step can actually use.
+# The activity endpoint returns ~45 fields per record. These are the ones anything
+# downstream actually uses.
 ACTIVITY_FIELDS: tuple[str, ...] = (
     "activity_id",
     "molecule_chembl_id",

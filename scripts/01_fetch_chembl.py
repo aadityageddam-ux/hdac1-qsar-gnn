@@ -1,7 +1,7 @@
-"""Fetch HDAC1 (CHEMBL325) IC50 bioactivity from ChEMBL, plus the censored records.
+"""Pull HDAC1 (CHEMBL325) IC50 data from ChEMBL, and the censored records too.
 
 Writes data/raw_activities.csv, data/hdac1_censored.csv and data/provenance.json.
-All HDAC1-specific parameters live here; src/chembl_fetch.py stays target-agnostic.
+Everything HDAC1-specific is in this file; src/chembl_fetch.py stays target-agnostic.
 """
 
 from __future__ import annotations

@@ -1,17 +1,16 @@
-"""Phase 4: the random-forest baseline, tuned on the validation fold and scored once on test.
+"""The random-forest baseline. Tuned on val, scored once on test.
 
-Protocol, in order:
+In order:
 
 1. Load the split through the SHA-256-verified contract. This script never imports
-   ``scaffold_split``, so it cannot recompute or reorder the folds.
-2. Build features for train and val only.
-3. Grid-search on the validation fold.
-4. Refit the winner on train + val under five seeds.
-5. Read the test fold EXACTLY ONCE, and score.
+   scaffold_split, so it can't recompute or reorder the folds.
+2. Featurise train and val only.
+3. Grid search on val.
+4. Refit the winner on train + val across five seeds.
+5. Read the test fold exactly once, and score.
 
-Reference baselines (train mean, majority class, random, and 1-nearest-neighbour
-Tanimoto) are emitted unconditionally, because a model's numbers are uninterpretable
-without them.
+The reference baselines (train mean, majority class, random, 1-NN Tanimoto) always get
+emitted. Without them a model's numbers don't mean anything.
 """
 
 from __future__ import annotations

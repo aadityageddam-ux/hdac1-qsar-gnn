@@ -1,17 +1,15 @@
-"""Molecular graphs, a GINE message-passing network, and its training loop.
+"""Molecular graphs, a GINE network, and the training loop.
 
-Architecture note, stated plainly because the README makes a claim about it: this is a
-GINEConv network, not a literal re-implementation of the Gilmer et al. (2017) NNConv
-edge-network MPNN. GINEConv belongs to the same message-passing family and consumes
-bond features directly, but it projects edge features to the node dimension and adds
-them, rather than learning a dense ``edge_dim -> hidden x hidden`` transform. At
-hidden=128 that transform would be a 16,384-output MLP per layer; on a few thousand
-training molecules it would overfit badly, and a negative result would then be
-attributable to the architecture rather than to the data. Saying "GINE, and here is
-why" is more honest than claiming Gilmer 2017 verbatim.
+To be clear about what this is, since the README makes a claim about it: it's GINEConv,
+not a re-implementation of the Gilmer 2017 NNConv MPNN. Same message-passing family, and
+it does use the bond features, but it projects edge features to the node dimension and
+adds them instead of learning a dense edge_dim x hidden x hidden transform. At hidden=128
+that transform is a 16,384-output MLP per layer, which on a few thousand molecules would
+just overfit - and then a negative result would be about my architecture choice rather
+than about the data. I'd rather say "GINE, and here's why" than claim Gilmer and quietly
+build something else.
 
-Everything here is generic: it takes SMILES, labels and hyperparameters. Nothing knows
-about HDAC1.
+Generic - takes SMILES, labels, hyperparameters. Nothing in here knows about HDAC1.
 """
 
 from __future__ import annotations
@@ -50,10 +48,8 @@ class GNNError(RuntimeError):
     """Raised when a molecule cannot be converted to a graph or training is misconfigured."""
 
 
-# ---------------------------------------------------------------------------------
-# Feature vocabularies. Out-of-vocabulary values fall into an explicit "other" bucket
-# rather than raising, but the caller is given the OOV count so it can be gated.
-# ---------------------------------------------------------------------------------
+# Feature vocabularies. Anything unrecognised goes in an "other" bucket instead of
+# raising, but the caller gets the count so it can gate on it.
 
 ATOM_SYMBOLS: tuple[str, ...] = (
     "B", "C", "N", "O", "F", "Si", "P", "S", "Cl", "Se", "Br", "I",
@@ -88,8 +84,8 @@ ATOM_FEATURE_DIM = (len(ATOM_SYMBOLS) + 1) + len(DEGREES) + len(FORMAL_CHARGES) 
 # 4 bond type + conjugated + ring + 4 stereo
 BOND_FEATURE_DIM = len(BOND_TYPES) + 2 + len(BOND_STEREOS)
 
-# No chirality feature: stereochemistry is stripped during standardisation, so a
-# chirality block would be constant zero and would misrepresent what the model sees.
+# No chirality feature - stereo is stripped during standardisation, so it'd be a
+# constant zero block and would misrepresent what the model actually gets.
 
 
 def _one_hot(value, vocabulary: Sequence, allow_other: bool = False) -> list[float]:
@@ -133,11 +129,10 @@ def _bond_features(bond: Chem.Bond) -> list[float]:
 
 
 def mol_to_graph(mol: Chem.Mol, y: float | None = None, idx: int | None = None) -> tuple[Data, int]:
-    """Convert an RDKit molecule to a PyG ``Data`` object; returns it with the OOV atom count.
+    """RDKit molecule to a PyG Data object, plus the out-of-vocabulary atom count.
 
-    Edges are stored in both directions (the graph is undirected) with bond features
-    duplicated. No self-loops are added: GINEConv already carries a ``(1 + eps) * x``
-    self term, so adding them would double-count each atom.
+    Edges go in both directions with the bond features duplicated. No self-loops -
+    GINEConv already has a (1 + eps) * x self term, so adding them double-counts.
     """
     if mol is None:
         raise GNNError("cannot build a graph from a None molecule")
@@ -178,11 +173,10 @@ def mol_to_graph(mol: Chem.Mol, y: float | None = None, idx: int | None = None) 
 def smiles_to_graphs(
     smiles: Sequence[str], y: Sequence[float] | None = None, strict: bool = True
 ) -> tuple[list[Data], dict]:
-    """Convert a list of SMILES to PyG graphs, returning the graphs and a stats dict.
+    """SMILES to PyG graphs, with a stats dict.
 
-    ``stats`` carries ``n_oov_atoms`` / ``oov_fraction`` so the caller can gate on the
-    out-of-vocabulary rate rather than discovering silently that a tenth of the atoms
-    landed in the catch-all bucket.
+    stats has the out-of-vocabulary atom count and fraction so the caller can gate on it.
+    Otherwise you'd never notice a tenth of your atoms falling into the "other" bucket.
     """
     graphs: list[Data] = []
     n_oov = n_atoms = n_failed = 0
@@ -209,19 +203,16 @@ def smiles_to_graphs(
     return graphs, stats
 
 
-# ---------------------------------------------------------------------------------
-# Determinism
-# ---------------------------------------------------------------------------------
+# --- determinism ---
 
 
 def set_global_seed(seed: int) -> None:
-    """Seed every RNG this project touches.
+    """Seed everything that has an RNG.
 
-    PYTHONHASHSEED only takes full effect when set before interpreter start; it is set
-    here as well so a child process inherits it, and the scripts set it in-process
-    before importing torch. PyG's CPU scatter reductions are deterministic, so
-    ``use_deterministic_algorithms(True)`` should not raise - if it ever does, the
-    offending op must be replaced rather than the flag relaxed.
+    PYTHONHASHSEED really needs to be set before the interpreter starts; setting it here
+    at least means child processes inherit it. PyG's CPU scatter ops are deterministic so
+    use_deterministic_algorithms(True) shouldn't raise. If it ever does, replace the op -
+    don't turn the flag off.
     """
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
@@ -240,9 +231,7 @@ def _seed_worker(worker_id: int) -> None:
     random.seed(worker_seed)
 
 
-# ---------------------------------------------------------------------------------
-# Model
-# ---------------------------------------------------------------------------------
+# --- model ---
 
 
 @dataclass(frozen=True)
@@ -268,11 +257,10 @@ class GNNConfig:
 
 
 class GINERegressor(nn.Module):
-    """GINE message-passing regressor with residual connections and mean+sum readout.
+    """GINE regressor, residual connections, mean+sum readout.
 
-    The readout concatenates mean and sum pooling because sum carries molecular size
-    (which correlates with potency in this dataset) while mean is size-invariant;
-    giving the head both lets it decide which it needs rather than baking in a choice.
+    Both poolings because sum carries molecular size (which correlates with potency here)
+    and mean doesn't. Giving the head both lets it pick rather than me guessing.
     """
 
     def __init__(self, cfg: GNNConfig, atom_dim: int = ATOM_FEATURE_DIM, bond_dim: int = BOND_FEATURE_DIM):
@@ -311,9 +299,7 @@ class GINERegressor(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 
-# ---------------------------------------------------------------------------------
-# Training
-# ---------------------------------------------------------------------------------
+# --- training ---
 
 
 @dataclass
@@ -357,16 +343,15 @@ def train_model(
     verbose: bool = False,
     fixed_epochs: int | None = None,
 ) -> tuple[GINERegressor, TrainResult]:
-    """Train one GINE model, either with early stopping or for a fixed epoch count.
+    """Train one GINE model, with early stopping or for a fixed number of epochs.
 
-    The target is z-scored using the FIT-fold statistics only, and predictions are
-    inverted back to pIC50 before any metric is computed, so the scaler never sees the
-    test fold.
+    The target is z-scored on the fit fold only and predictions are converted back to
+    pIC50 before anything is scored, so the scaler never sees the test set.
 
-    ``fixed_epochs`` exists for the final refit. Once the model is refit on train + val
-    there is no held-out fold left to early-stop on, so it runs for the epoch count that
-    early stopping selected during tuning. Refitting on train + val is also done for the
-    random forest; doing it for one model and not the other would be a silent unfairness.
+    fixed_epochs is for the final refit: once you've refit on train+val there's no
+    held-out fold left to stop on, so it runs for however many epochs early stopping
+    picked during tuning. The forest gets refit on train+val too - doing it for one model
+    and not the other would quietly tilt the comparison.
     """
     if not train_graphs:
         raise GNNError("train_graphs is empty")
@@ -409,8 +394,8 @@ def train_model(
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=cfg.lr_factor, patience=cfg.lr_patience, min_lr=cfg.min_lr
     )
-    # Huber rather than MSE: some label noise survives the pIC50-range filter, and MSE
-    # would let a handful of bad labels dominate the gradient.
+    # Huber, not MSE. Some label noise gets through the pIC50-range filter and MSE lets
+    # a few bad labels dominate the gradient.
     criterion = nn.SmoothL1Loss(beta=cfg.huber_beta)
 
     result = TrainResult(
@@ -438,8 +423,8 @@ def train_model(
         result.epochs_run = epoch
 
         if val_loader is None:
-            # Fixed-epoch refit: no held-out fold exists, so there is nothing to
-            # schedule or early-stop on. Run the prescribed number of epochs.
+            # Fixed-epoch refit - nothing held out to schedule or stop on, so just run
+            # the epochs we were told to.
             continue
 
         val_rmse, _ = _rmse_native(model, val_loader, mean, std, device)

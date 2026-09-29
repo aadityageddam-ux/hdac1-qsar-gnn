@@ -1,15 +1,14 @@
-"""ECFP4 fingerprints, a 12-descriptor block, and Tanimoto similarity helpers.
+"""ECFP4 fingerprints, 12 descriptors, and Tanimoto helpers.
 
-Uses the current `rdFingerprintGenerator` API, not the deprecated
-`GetMorganFingerprintAsBitVect`. Fingerprints are binary rather than counts so
-that the model features and the leakage Tanimoto check use the same
-representation.
+Uses the current rdFingerprintGenerator API rather than the deprecated
+GetMorganFingerprintAsBitVect. Binary fingerprints, not counts, so the model features and
+the leakage Tanimoto check are computed on the same representation.
 
-No feature scaling is applied. A random forest is invariant to monotone
-per-feature transforms, so a StandardScaler would change nothing about the model
-and would only add a fittable object capable of leaking statistics across folds.
+No scaling. A forest doesn't care about monotone per-feature transforms, so a
+StandardScaler would change nothing about the model and would only add a fitted object
+that could leak statistics across folds.
 
-Generic: takes SMILES lists, not any particular target.
+Generic - takes SMILES lists, not a target.
 """
 
 from __future__ import annotations
@@ -22,14 +21,13 @@ from rdkit.Chem import Crippen, Descriptors, QED, rdFingerprintGenerator, rdMolD
 
 MORGAN_RADIUS = 2
 FP_SIZE = 2048
-# Stereochemistry is stripped upstream, so chirality is excluded here too; a
-# constant-zero chirality contribution would only add noise-free dead bits.
+# Stereo is stripped upstream so chirality is off here too - it'd just be dead bits.
 INCLUDE_CHIRALITY = False
 COUNT_SIMULATION = False
 
-# Twelve descriptors, each encoding something a substructure fingerprint
-# structurally cannot: bulk size, lipophilicity, polarity, H-bonding capacity,
-# flexibility, ring content, saturation, graph complexity, drug-likeness.
+# Twelve descriptors, each one covering something a substructure fingerprint can't see:
+# size, lipophilicity, polarity, H-bonding, flexibility, rings, saturation, complexity,
+# drug-likeness.
 DESCRIPTOR_NAMES: tuple[str, ...] = (
     "MolWt",
     "MolLogP",

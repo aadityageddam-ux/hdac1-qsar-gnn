@@ -1,15 +1,14 @@
-"""Every data and split assertion, as named gates that can be run standalone.
+"""All the data and split checks, as named gates you can run on their own.
 
-A gate returns a frozen `GateResult` rather than raising, so a full report can be
-written even when something fails. `run_all_gates()` writes
-`results/gate_report.json` and then raises `GateFailure` on the first result whose
-severity is "fail". Severity "flag" records a finding that must be reported but
-must not stop the pipeline.
+A gate returns a GateResult instead of raising, so the full report still gets written
+when something fails. run_all_gates() writes results/gate_report.json and then raises
+GateFailure on the first "fail". Severity "flag" is for things that need reporting but
+shouldn't stop the run.
 
-This module covers the data and split gates. Evaluation and protocol gates are
-added by the modelling phase.
+Data and split gates live here. The modelling phase adds the evaluation and protocol
+ones.
 
-Generic: takes dataframes and paths, not any particular target.
+Generic - takes dataframes and paths, not a target.
 """
 
 from __future__ import annotations
@@ -49,24 +48,23 @@ POS_RATE_FLAG_BOUNDS = (0.20, 0.80)
 FRACTION_TOLERANCE = 0.03
 REQUESTED_FRACTIONS = {"train": 0.70, "val": 0.15, "test": 0.15}
 MAX_ACYCLIC_FRACTION = 0.05
-# A scaffold split legitimately permits high-Tanimoto pairs (swapping one ring
-# changes the Murcko scaffold while leaving the molecules ~0.9 similar), so this
-# is reported rather than failed.
+# A scaffold split is allowed to have high-Tanimoto pairs - swap one ring and the Murcko
+# scaffold changes while the molecules stay ~0.9 similar. So report it, don't fail on it.
 HIGH_SIMILARITY_THRESHOLD = 0.85
 HIGH_SIMILARITY_EXPECTED_BAND = (0.03, 0.10)
-# The similarity gate is calibrated RELATIVE to a seeded random-split control on the
-# same data, not against an absolute constant.
+# This gate is calibrated against a seeded random-split control on the same data, not
+# against a fixed number.
 #
-# The original plan expected a median test-to-train Tanimoto of 0.30-0.45 and failed
-# above 0.60. Measurement refuted that prior for this target: HDAC1's ChEMBL corpus is
-# congeneric (every compound is zinc-binding group + linker + cap, assembled from 781
-# SAR papers around one pharmacophore), and its dataset-wide nearest-neighbour median is
-# ~0.80. The 0.30-0.45 band describes a diverse multi-target benchmark, not a
-# single-target SAR corpus, and no scaffold-based scheme can reach it here.
+# I originally expected a median test-to-train Tanimoto of 0.30-0.45 and failed above
+# 0.60. Measuring it showed that was wrong for this target. HDAC1's ChEMBL corpus is
+# congeneric - nearly every compound is zinc-binding group + linker + cap, pulled from
+# ~780 SAR papers around one pharmacophore - and the dataset's own nearest-neighbour
+# median is ~0.80. The 0.30-0.45 figure describes diverse multi-target benchmarks, and no
+# scaffold-based scheme is going to reach it here.
 #
-# What the gate actually cares about is whether the split separates chemotypes better
-# than chance. That is the random-split control, so the gate asks for a margin below it.
-# This is self-calibrating across targets, where an absolute threshold is not.
+# What I actually care about is whether the split separates chemotypes better than
+# chance. That's the random-split control, so the gate asks for a margin below it. That
+# self-calibrates on any target; an absolute threshold doesn't.
 MEDIAN_SIMILARITY_MIN_MARGIN_BELOW_RANDOM = 0.05
 HIGH_SIMILARITY_MIN_REDUCTION_FACTOR = 2.0
 DUPLICATE_SIMILARITY = 1.0
@@ -251,12 +249,12 @@ def compute_nn_similarity(
 def identical_fingerprint_pairs(
     split: pd.DataFrame, similarity: pd.DataFrame, smiles_column: str = "canonical_smiles"
 ) -> pd.DataFrame:
-    """List cross-fold pairs at Tanimoto 1.0 and say whether they are the same structure.
+    """Cross-fold pairs at Tanimoto 1.0, and whether they're actually the same structure.
 
-    A folded 2048-bit binary ECFP4 is not injective: two homologs differing by one
-    methylene in a linker present the same multiset of radius-2 environments and so
-    fold to the same bit vector. L8 flags those alongside true duplicates, so this
-    helper separates the two cases by comparing canonical SMILES directly.
+    A folded 2048-bit ECFP4 isn't injective. Two homologs differing by one methylene in a
+    linker have the same set of radius-2 environments, so they fold to the same bit
+    vector. L8 catches those along with real duplicates, so this separates the two by
+    comparing canonical SMILES.
     """
     lookup = split.set_index("inchikey")[smiles_column]
     identical = similarity[similarity["max_sim_to_train"] >= DUPLICATE_SIMILARITY]
@@ -326,12 +324,11 @@ def random_split_similarity_control(
     train_fraction: float = REQUESTED_FRACTIONS["train"],
     val_fraction: float = REQUESTED_FRACTIONS["val"],
 ) -> dict[str, float]:
-    """Max-Tanimoto summary for a seeded RANDOM split at the same fold fractions.
+    """Max-Tanimoto summary for a seeded random split at the same fold fractions.
 
-    This is the control that makes L10 readable: it says how similar test and train
-    would be if the split did no chemotype separation at all, so the scaffold
-    split's own median can be judged against the dataset's congestion rather than
-    against an absolute constant.
+    This is what makes L10 mean anything - it tells you how similar test and train would
+    be if the split did no chemotype separation at all, so the scaffold split's median can
+    be judged against how crowded the dataset actually is rather than a constant I made up.
     """
     smiles = split[smiles_column].tolist()
     n = len(smiles)
@@ -424,8 +421,8 @@ def run_split_gates(
 
     pairs = identical_fingerprint_pairs(split, similarity)
 
-    # The random-split control is what makes the similarity gates readable: it says how
-    # similar test and train would be if the split did no chemotype separation at all.
+    # The random-split control is what makes these numbers readable - it's how similar
+    # test and train would be with no chemotype separation at all.
     control = random_split_similarity_control(split)
     control_median = float(control["median"])
     control_high_fraction = float(control["fraction_ge_0.85"])
@@ -437,17 +434,18 @@ def run_split_gates(
         label = "test" if query_fold == "test" else "val"
         suffix = "" if query_fold == "test" else "_val"
 
-        # L8 tests for identical FINGERPRINTS. A folded 2048-bit binary ECFP4 at radius 2
-        # is not injective, so this fires on genuinely distinct molecules: adding one
-        # methylene mid-chain, or changing a macrocycle by one atom, creates no new
-        # radius-2 environment and leaves the bit set unchanged. On this dataset every
-        # such pair was a distinct structure, so this is a FLAG, not a failure - it
-        # reports a limitation of the fingerprint, not a defect in the split.
+        # This checks for identical FINGERPRINTS, which isn't the same as identical
+        # molecules. A folded 2048-bit ECFP4 isn't injective, so it fires on genuinely
+        # different compounds - add a methylene mid-chain, or change a macrocycle by one
+        # atom, and you create no new radius-2 environment and the bits don't move. I
+        # checked all of them on this dataset and every pair was a distinct structure, so
+        # this is a flag, not a failure. It's a limit of the fingerprint, not a broken
+        # split.
         #
-        # It is still worth reporting, and the direction matters: a test compound with a
-        # fingerprint-identical training neighbour is effectively memorised by the random
-        # forest, which sees only the fingerprint, but not by the GNN, which sees the
-        # graph. That asymmetry favours the baseline.
+        # Still worth reporting, and the direction matters: a test compound with a
+        # fingerprint-identical training neighbour is effectively memorised by the forest,
+        # which only sees the fingerprint, but not by a graph model. That small effect
+        # favours the baseline.
         n_identical = int((sims >= DUPLICATE_SIMILARITY).sum())
         results.append(
             _gate(
@@ -459,12 +457,11 @@ def run_split_gates(
             )
         )
 
-        # This carries the fail severity, because it tests the property L8 was meant to
-        # test: that no identical STRUCTURE survived standardization into two folds.
-        # Comparing canonical SMILES is a direct test where Tanimoto == 1.0 is a proxy
-        # that is wrong here. Swapping the proxy for the direct test strengthens the
-        # leak-free claim rather than weakening it; L2 (InChIKey) and L4 (duplicate
-        # SMILES) already enforce the same property from the other direction.
+        # This one is the failure, because it tests what L8 was supposed to test: that no
+        # identical STRUCTURE made it through standardization into two folds. Comparing
+        # canonical SMILES is direct; Tanimoto == 1.0 was a proxy, and here it's the wrong
+        # one. Swapping a bad proxy for the real test makes the leak-free claim stronger,
+        # not weaker - and L2 and L4 already enforce the same thing from the other side.
         fold_pairs = pairs[pairs["query_fold"] == query_fold]
         n_same_structure = int(fold_pairs["same_structure"].sum()) if len(fold_pairs) else 0
         results.append(
@@ -489,10 +486,9 @@ def run_split_gates(
             )
         )
 
-        # The median must sit a clear margin below the random-split control. This is the
-        # recalibrated L10: it asks whether the split separates chemotypes better than
-        # chance on THIS dataset, rather than against an absolute band that assumed a
-        # structural diversity HDAC1's corpus does not have.
+        # The median has to sit a clear margin below the random-split control. This is the
+        # recalibrated version - it asks whether the split beats chance on this dataset,
+        # instead of comparing to a band that assumed diversity this corpus doesn't have.
         median_sim = float(np.median(sims))
         margin = control_median - median_sim
         results.append(
@@ -505,8 +501,8 @@ def run_split_gates(
             )
         )
 
-        # Recorded, never gated: the absolute level is a property of the dataset's
-        # congeneric chemistry, and belongs in the README as a finding.
+        # Recorded but never gated. The absolute level says something about the dataset's
+        # chemistry, not about the split, so it belongs in the README as a finding.
         results.append(
             _gate(
                 f"{'L10b' if query_fold == 'test' else 'L11d'}_median_absolute{suffix}",
@@ -566,9 +562,9 @@ def run_all_gates(
     clean = pd.read_csv(data_dir / "hdac1_clean.csv")
     split = pd.read_csv(data_dir / "split_assignment.csv")
 
-    # D1 compares against ChEMBL's pchembl_value, which only exists at the
-    # per-activity level; 02_clean_dataset.py records the observed maximum
-    # deviation in provenance.json so the gate stays checkable from artifacts.
+    # D1 compares against ChEMBL's pchembl_value, which only exists per-activity, so
+    # 02_clean_dataset.py writes the max deviation into provenance.json and the gate reads
+    # it from there. Keeps it checkable from the artifacts alone.
     provenance_path = data_dir / "provenance.json"
     max_pchembl_deviation = None
     if provenance_path.exists():

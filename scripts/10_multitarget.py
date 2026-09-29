@@ -1,26 +1,23 @@
-"""Does the split-dependence result replicate on other targets, or is it an HDAC1 artifact?
+"""Does the split-dependence result hold up on other targets, or is it an HDAC1 thing?
 
-The HDAC1 study found that a random split flatters the fingerprint baseline substantially
-more than it flatters a graph model, enough to reverse the apparent winner. On one target
-that is an anecdote. This script re-runs the core of that experiment on three targets:
+On HDAC1 the split changes which model appears to win. On one target that's an anecdote,
+so this re-runs the core experiment on three:
 
-  * HDAC1  (CHEMBL325)  - the original, re-run here under the reduced protocol so the
+  * HDAC1  (CHEMBL325)  - the original, re-run under this reduced protocol so the
                           cross-target table is internally consistent
-  * HDAC6  (CHEMBL1865) - same enzyme family; HDAC1/HDAC6 selectivity is a real
-                          medicinal-chemistry problem, so this tests within-family
-                          replication
-  * hERG   (CHEMBL240)  - a different target class entirely (ion-channel anti-target),
-                          testing whether the effect survives a change of chemistry
+  * HDAC6  (CHEMBL1865) - same enzyme family, and HDAC1/HDAC6 selectivity is a real
+                          med-chem problem, so this tests within-family replication
+  * hERG   (CHEMBL240)  - a completely different target class, to see whether the effect
+                          survives a change of chemistry
 
-Everything reuses the same src/ modules as the main pipeline, so the data cleaning,
-scaffold assignment, featurisation and metrics are identical by construction rather than
-by reimplementation.
+Everything reuses the same src/ modules as the main pipeline, so the cleaning, scaffold
+assignment, featurisation and metrics are identical by construction rather than because I
+reimplemented them the same way twice.
 
-Reduced protocol, stated rather than implied: three seeds instead of five, Chemprop only
-(no GINE, which existed in the main study to show implementation-independence and has
-already served that purpose), and no random-forest hyperparameter search - the winning
-HDAC1 configuration is reused across targets. The question here is whether an effect
-replicates in sign and rough magnitude, not what each target's best achievable RMSE is.
+Reduced protocol, said plainly: three seeds instead of five, Chemprop only (GINE was in
+the main study to show the result wasn't implementation-specific, and it did that), and no
+forest hyperparameter search - the HDAC1 winner is reused. The question here is whether an
+effect replicates in sign and rough size, not what each target's best RMSE is.
 """
 
 from __future__ import annotations

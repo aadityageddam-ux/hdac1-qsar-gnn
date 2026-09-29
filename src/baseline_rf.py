@@ -1,24 +1,22 @@
-"""Random-forest baseline: tuning on the validation fold, multi-seed fitting, ablations.
+"""Random-forest baseline: val-fold tuning, multi-seed fitting, feature ablations.
 
-Why a random forest rather than gradient boosting, since the README makes this claim:
+Why a forest and not gradient boosting:
 
-* A few thousand training rows against ~2,060 mostly-sparse binary features is where
-  bagging's variance reduction beats boosting's bias reduction.
-* A forest reaches its ceiling with almost no tuning. That matters for credibility: the
-  easiest way to dismiss a "the GNN did not win" result is to argue the baseline was
-  under-tuned, and boosting would need learning rate, tree count, depth and subsample
-  tuned jointly before that objection could be answered.
-* ``HistGradientBoostingRegressor`` bins each feature into 255 buckets, which is
-  pointless on binary inputs, and would densify 2048 columns.
+* A few thousand rows against ~2,060 mostly-sparse binary features is where bagging
+  beats boosting.
+* A forest hits its ceiling with almost no tuning, which matters here. The easiest way
+  to wave away "the GNN didn't win" is to say the baseline was under-tuned, and boosting
+  would need lr, tree count, depth and subsample tuned together before I could answer
+  that.
+* HistGradientBoostingRegressor bins every feature into 255 buckets, which is pointless
+  on binary inputs, and it would densify 2048 columns.
 
-No feature scaling anywhere. A forest is invariant to any monotone per-feature
-transform, so a ``StandardScaler`` would change nothing except introduce a fitted
-object that could leak across folds. The real mixed-feature problem is that 12
-descriptors compete with 2048 bits for split candidates, which is handled by putting
-``max_features`` in the tuning grid and by reporting the feature-block ablations.
+No scaling anywhere. A forest doesn't care about monotone per-feature transforms, so a
+StandardScaler would do nothing except add a fitted object that could leak across folds.
+The actual mixed-feature problem is 12 descriptors competing with 2048 bits for split
+candidates - handled by putting max_features in the grid and reporting the ablations.
 
-This module never touches the test fold. Test predictions are produced by the caller
-passing in an already-extracted matrix.
+This module never touches the test fold; the caller passes in the matrix.
 """
 
 from __future__ import annotations
@@ -49,9 +47,9 @@ class BaselineError(RuntimeError):
     """Raised when the baseline is given inconsistent data or an empty grid."""
 
 
-# n_estimators is fixed rather than tuned: random-forest test error is monotone
-# non-increasing in the number of trees, so "tuning" it only ever selects the largest
-# value offered. Take the largest that is affordable and spend the search elsewhere.
+# n_estimators is fixed, not tuned. Forest test error only goes down with more trees, so
+# "tuning" it just picks whatever the largest option was. Take the biggest I can afford
+# and spend the search budget on something that matters.
 N_ESTIMATORS = 1000
 SEEDS: tuple[int, ...] = (0, 1, 2, 3, 4)
 
@@ -167,11 +165,10 @@ def tune_random_forest(
     seed: int = 0,
     verbose: bool = True,
 ) -> TuningResult:
-    """Grid-search on the validation fold only, as an explicit loop.
+    """Grid search on the validation fold, written as a plain loop.
 
-    Written as a visible loop rather than ``GridSearchCV`` so that the fold discipline
-    is auditable in the source: the test fold is never passed to this function, and the
-    selection criterion is applied to validation predictions alone.
+    A loop rather than GridSearchCV so you can see the fold discipline in the source:
+    the test fold is never passed in here, and selection only ever looks at val.
     """
     import time
 
@@ -221,12 +218,11 @@ def fit_predict_multiseed(
     seeds: Sequence[int] = SEEDS,
     verbose: bool = True,
 ) -> MultiSeedResult:
-    """Fit one configuration under several seeds and average the predictions.
+    """Fit one config across several seeds and average the predictions.
 
-    The GNN is reported over five seeds because small-data graph models have real seed
-    variance; running the forest over the same five keeps the comparison symmetric.
-    Reporting a single-seed forest against a five-seed GNN mean would quietly rig the
-    result, so the seed list is shared rather than passed in per model.
+    The GNN gets five seeds because small-data graph models really do vary by seed. The
+    forest gets the same five so the comparison stays symmetric - a one-seed forest
+    against a five-seed GNN mean would rig it. Hence one shared seed list.
     """
     import time
 
@@ -264,11 +260,11 @@ def fit_predict_multiseed(
 def split_importance(
     importances: np.ndarray, n_fingerprint_bits: int, descriptor_names: Sequence[str]
 ) -> dict:
-    """Divide total Gini importance between fingerprint bits and descriptors.
+    """Split total Gini importance between the fingerprint bits and the descriptors.
 
-    Relevant to how the headline comparison should be read: if the twelve bulk
-    descriptors carry most of the importance, then "random forest versus GNN" is really
-    "bulk properties versus substructure", and the README has to say so.
+    Matters for reading the headline: if the 12 bulk descriptors carry most of it, then
+    "forest vs GNN" is really "bulk properties vs substructure" and the README should
+    say so.
     """
     imp = np.asarray(importances, dtype=np.float64)
     if imp.size != n_fingerprint_bits + len(descriptor_names):

@@ -1,17 +1,17 @@
-"""Phase 5: the GINE message-passing network, on the same split and the same harness.
+"""The GINE network. Same split, same scoring code as the forest.
 
-Deliberately sequential after Phase 4, and deliberately symmetric with it:
+Runs after the baseline on purpose, and matches it on purpose:
 
-* the split arrives through the same SHA-256-verified contract, and this script never
-  imports ``scaffold_split`` either;
-* tuning happens on the validation fold only;
-* the winner is refit on train + val, exactly as the forest is, for the epoch count that
-  early stopping selected during tuning;
+* the split comes through the same SHA-256-verified contract, and this script doesn't
+  import scaffold_split either;
+* tuning only ever looks at val;
+* the winner is refit on train + val, like the forest, for however many epochs early
+  stopping picked;
 * five seeds, reported as mean and sd;
-* every metric comes from ``src.evaluate``.
+* every metric comes from src/evaluate.py.
 
-Running one model over five seeds and the other over one, or refitting one on train+val
-and not the other, would quietly decide the comparison before any data was seen.
+Giving one model five seeds and the other one, or refitting one on train+val and not the
+other, would settle the comparison before any data got involved.
 """
 
 from __future__ import annotations

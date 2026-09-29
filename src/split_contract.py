@@ -1,14 +1,13 @@
-"""The single loader for the scaffold split, verified against a recorded SHA-256.
+"""The one loader for the split, checked against a recorded SHA-256.
 
-This module is the whole leak-free claim, and it is checkable without rerunning
-anything. Modelling code imports `load_split()` and nothing else: neither the
-random-forest baseline nor the GNN may import `scaffold_split`, so neither can
-recompute, reorder, or quietly redefine the folds.
+This module is the whole leak-free claim, and you can check it without rerunning
+anything. Model code imports load_split() and nothing else - none of them may import
+scaffold_split, so none of them can recompute, reorder or quietly redefine the folds.
 
-Test-fold access goes through `SplitBundle.test()`, which counts calls so a
-downstream gate can assert the test set was touched exactly once.
+Test-fold access goes through SplitBundle.test(), which counts calls so a gate can
+assert the test set was read exactly once.
 
-Generic: takes a path and column names, not any particular target.
+Generic - takes a path and column names, not a target.
 """
 
 from __future__ import annotations
@@ -40,8 +39,7 @@ REQUIRED_COLUMNS: tuple[str, ...] = (
 
 FOLD_NAMES: tuple[str, str, str] = ("train", "val", "test")
 
-# Files are hashed in fixed-size binary chunks so the digest does not depend on
-# platform line-ending or text-decoding behaviour.
+# Hashed in binary chunks so the digest doesn't depend on line endings or text decoding.
 HASH_CHUNK_BYTES = 1 << 20
 
 

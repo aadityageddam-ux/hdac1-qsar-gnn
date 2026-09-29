@@ -1,15 +1,15 @@
-"""Deterministic Bemis-Murcko scaffold splitting with no random number generator.
+"""Bemis-Murcko scaffold split. Deterministic, no RNG anywhere.
 
-Atom-typed Murcko scaffolds are used, not generic frameworks: `MakeScaffoldGeneric`
-erases atom identity and would merge a hydroxamate-bearing aryl with a
-benzamide-bearing aryl. Where the zinc-binding group is the pharmacophore, that
-would make the split hard for reasons unrelated to structural novelty.
+Atom-typed scaffolds, not generic frameworks. MakeScaffoldGeneric throws away atom
+identity and would merge a hydroxamate-bearing aryl with a benzamide-bearing one. When
+the zinc-binding group is the pharmacophore, that makes the split hard for reasons that
+have nothing to do with structural novelty.
 
-Ring-free molecules are the trap: `MurckoScaffoldSmiles` returns "" for them, and
-the naive handling bundles structurally unrelated compounds into one giant
-pseudo-scaffold. Each acyclic molecule instead gets its own singleton group.
+The trap is ring-free molecules: MurckoScaffoldSmiles returns "" for them, and the
+obvious handling lumps unrelated compounds into one enormous pseudo-scaffold. Each
+acyclic molecule gets its own singleton group instead.
 
-Generic: takes SMILES and fractions, not any particular target.
+Generic - takes SMILES and fractions, not a target.
 """
 
 from __future__ import annotations
@@ -20,8 +20,7 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
 
-# Stereochemistry is stripped upstream, so scaffolds are computed achirally for
-# consistency with the standardized structures.
+# Stereo is stripped upstream, so scaffolds are computed achirally to match.
 MURCKO_INCLUDE_CHIRALITY = False
 
 # Key prefix that keeps every ring-free molecule in its own singleton group.
@@ -31,12 +30,12 @@ TRAIN_FRACTION = 0.70
 VAL_FRACTION = 0.15
 TEST_FRACTION = 0.15
 
-# Fold fractions must land within this many absolute points of the request, or
-# the split is raised rather than silently rebalanced.
+# Fold fractions have to land within this many points of what was asked, or it raises
+# rather than quietly rebalancing.
 FRACTION_TOLERANCE = 0.03
 
-# HDAC1 chemical space is ring-dominated; a large acyclic fraction means
-# standardization broke, not that the chemistry changed.
+# This chemical space is ring-dominated. A big acyclic fraction means standardization
+# broke, not that the chemistry changed.
 MAX_ACYCLIC_FRACTION = 0.05
 
 FOLD_NAMES: tuple[str, str, str] = ("train", "val", "test")
@@ -129,10 +128,9 @@ def build_split(
     for index, key in enumerate(keys):
         members.setdefault(key, []).append(index)
 
-    # Largest groups first so train absorbs the common chemotypes and test is left
-    # with the rare and singleton scaffolds - the harder, more honest setting. The
-    # lexicographic tiebreak makes the order stable across runs, platforms and
-    # hash seeds.
+    # Biggest groups first, so train soaks up the common chemotypes and test is left with
+    # the rare and singleton scaffolds. That's the harder setting and the honest one. The
+    # lexicographic tiebreak keeps the order stable across runs, platforms and hash seeds.
     ordered = sorted(members.items(), key=lambda item: (-len(item[1]), item[0]))
 
     n_train_target = round(n_compounds * train_fraction)

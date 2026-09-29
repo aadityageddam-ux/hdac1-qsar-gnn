@@ -1,19 +1,17 @@
-"""Phase 6: the honest comparison, computed entirely from the models' saved predictions.
+"""The comparison, computed entirely from the saved predictions.
 
-Deliberately cheap and deterministic: it retrains nothing, so the headline table can be
-regenerated in seconds and checked against the README. The expensive diagnostics that
-need retraining (learning curve, random-split control) live in 07_diagnostics.py.
+Cheap and deterministic - it retrains nothing, so the headline table regenerates in
+seconds and can be checked against the README. The expensive diagnostics that do need
+retraining live in 07_diagnostics.py and 07b_random_split_control.py.
 
-Three models are compared where available - the fingerprint random forest, a hand-rolled
-GINE network, and Chemprop's D-MPNN at author defaults. Chemprop is the field-standard
-graph baseline, so the headline comparison is the forest against it; the GINE network is
-reported alongside to show that the result is not an artifact of one particular
+Three models where they're available: the fingerprint forest, my GINE network, and
+Chemprop at defaults. Chemprop is the field-standard graph model, so the headline is the
+forest against it; GINE is reported alongside to show the result isn't an artifact of one
 implementation.
 
-The headline statistic is the paired bootstrap on the difference, not the marginal
-intervals. Two overlapping confidence intervals do not mean two models are
-indistinguishable, and reading them that way is the most common way a comparison like
-this gets misreported.
+The number that matters is the paired bootstrap on the difference, not the two separate
+intervals. Overlapping CIs don't mean two models are indistinguishable, and reading them
+that way is the most common way this kind of comparison gets misreported.
 """
 
 from __future__ import annotations

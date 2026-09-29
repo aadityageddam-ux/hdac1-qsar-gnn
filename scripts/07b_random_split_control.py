@@ -1,21 +1,24 @@
-"""The random-split control: how much apparent accuracy the evaluation protocol alone buys.
+"""How much apparent accuracy the evaluation protocol buys you, for free.
 
-Refits every model under a seeded random split at the same fold fractions as the scaffold
-split, and reports the difference. That difference - "optimism" - is the quantity a
-random-split evaluation adds for free on identical data with identical models.
+Refits every model under a seeded random split at the same fold sizes as the scaffold
+split and reports the difference. That difference - optimism - is what a random-split
+evaluation adds on identical data with identical models.
 
-Split out from 07_diagnostics.py because the two diagnostics have very different costs:
-the learning curve retrains models at five training-set sizes and runs for hours, while
-this control is a handful of fits. Keeping them separate means the control can be
-recomputed without paying for the curve, which matters because this control has already
-had to be recomputed once.
+Kept separate from the learning curve because it's minutes rather than hours, and because
+it has already had to be recomputed twice.
 
-**The detail that matters here.** Each split selects its own epoch count on its own
-validation fold. An earlier version reused the scaffold-selected count on the random
-split, which under-trains the neural models on the easier split and understates their
-optimism. Since the random forest has no epoch selection, that bias applied only to the
-neural models - and in the direction that made the forest look uniquely sensitive to
-leakage. It produced a headline finding that was exactly backwards. See AI_USAGE.md.
+Two things this gets right that earlier versions didn't, both of which reversed the
+headline finding when they were wrong:
+
+1. Each split picks its own epoch count on its own validation fold. Reusing the
+   scaffold-selected count under-trains the neural models on the easier split.
+2. Both sides of the subtraction use the same seed protocol. Seed-ensembling is worth
+   ~0.04 RMSE to a neural model and ~0.001 to a forest, so ensembling only one side
+   strips optimism from the neural models and nothing from the forest.
+
+The forest has no epoch schedule and gains nothing from seed averaging, so any protocol
+detail applied unevenly lands entirely on the neural models. Both bugs did. See
+AI_USAGE.md.
 """
 
 from __future__ import annotations
