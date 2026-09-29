@@ -306,6 +306,45 @@ Three things worth drawing out, since this is the most useful failure in the pro
   been restructured around, and it was the thing I would have led with in outreach. That is exactly
   the kind of result that deserves a second implementation before it is believed.
 
+## Interaction 7: the same bias, a second time, by a different route
+
+Having fixed the epoch-selection bug in Interaction 6, I recomputed the single-target control and
+it appeared to contradict the three-target replication: it showed all three models gaining about
+equally from a random split, while the replication showed the graph model gaining clearly more.
+
+The contradiction was a second protocol asymmetry in the same diagnostic. The control computed
+optimism as
+
+```
+optimism = ensembled scaffold RMSE  -  single-seed random-split RMSE
+```
+
+Those are not the same kind of number. Seed-ensembling is worth about 0.04 RMSE to a neural model
+and about 0.001 to a thousand-tree random forest, which is already an ensemble:
+
+| model | per-seed scaffold RMSE | 5-seed ensembled | gain |
+| --- | --- | --- | --- |
+| Random forest | 0.7370 | 0.7367 | 0.0004 |
+| GINE | 0.7744 | 0.7357 | 0.0387 |
+| Chemprop | 0.7685 | 0.7312 | 0.0373 |
+
+Ensembling only the scaffold side therefore removed ~0.04 of optimism from each neural model and
+essentially none from the forest. Comparing like with like — one model on both sides — gives
++0.1289 for the forest, +0.1529 for GINE and +0.1610 for Chemprop, which agrees in direction with
+the three-target result and closely in magnitude (ratio 0.80 against 0.76).
+
+What makes this worth recording is that it is the *same distortion as Interaction 6 arriving by a
+completely different mechanism*, and I did not anticipate it after fixing the first one. Both bugs
+exploited the same underlying fact — the forest has no epoch schedule and gains nothing from seed
+averaging, so any protocol detail applied asymmetrically lands entirely on the neural models — and
+both happened to push the result toward the conclusion I had already written down.
+
+`scripts/99_verify.py` now checks both directly: that each split selected its own epoch count, and
+that both sides of the optimism subtraction use the same seed protocol. The correction re-derives
+optimism from measurements already recorded rather than retraining, because the random-split
+numbers are real measurements and only the scaffold side of the subtraction was wrong. Retraining
+would have cost eighteen hours and changed nothing.
+
 ## What was mine vs. AI-generated
 
 **Claude wrote effectively all of the code** in `src/` and `scripts/`, and the first drafts of this

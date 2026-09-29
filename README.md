@@ -22,12 +22,14 @@ with 1 of 27 model-pair × metric comparisons reaching significance, which is wh
 > the *fingerprint* model more than twice as much as a graph model. That was measured against the
 > hand-rolled GINE network, which is the weakest model here.
 >
-> *Second*, the diagnostic that produced it had a bug of my own making: the neural models were
-> trained on the random split for an epoch budget selected on the *scaffold* split, which
-> under-trains them on the easier split and understates their optimism. The random forest has no
-> epoch selection, so only the neural rows were biased — in exactly the direction that made the
-> forest look uniquely leakage-sensitive. Once each split selects its own epoch count on its own
-> validation fold, the asymmetry reverses and replicates 3/3. Written up in `AI_USAGE.md`.
+> *Second*, the diagnostic that produced it carried **two** protocol bugs of my own making, by
+> different mechanisms and pointing the same way. The neural models were trained on the random
+> split for an epoch budget selected on the *scaffold* split, under-training them on the easier
+> split; and their optimism was computed as an ensembled scaffold RMSE minus a single-seed random
+> RMSE, which strips ~0.04 from a neural model and ~0.001 from the forest. The random forest has
+> no epoch selection and barely benefits from seed-ensembling, so both bugs biased only the neural
+> rows — in exactly the direction that made the forest look uniquely leakage-sensitive. Corrected,
+> the asymmetry reverses and replicates 3/3. Written up in `AI_USAGE.md`.
 
 ## The results
 
@@ -89,6 +91,19 @@ support. A random split is not simply "easier" — it is differently wrong each 
 Two things replicate cleanly. The optimism is **large** — 0.065 to 0.173 log units of free apparent
 accuracy from the evaluation protocol alone. And it is **asymmetric in the graph model's favour**:
 the forest captures only about 70% as much of it, in all three targets.
+
+**The same asymmetry appears in a second, independent estimate.** The three-target table above
+ensembles three seeds on both splits. A separate single-model control on HDAC1
+(`scripts/07b_random_split_control.py`, one model per side rather than an ensemble) gives:
+
+| Model | random split | scaffold split | optimism |
+| --- | --- | --- | --- |
+| Random forest | 0.6081 | 0.7370 | +0.1289 |
+| GINE | 0.6215 | 0.7744 | +0.1529 |
+| Chemprop D-MPNN | 0.6075 | 0.7685 | +0.1610 |
+
+Forest-to-Chemprop ratio 0.80, against 0.76 from the three-seed run on the same target. Two
+estimates built on different seed protocols, agreeing in direction and closely in magnitude.
 
 The mechanism is plausible and deflationary. A random split scatters near-duplicate analogues
 across train and test; a higher-capacity graph model interpolates between them more effectively
@@ -268,7 +283,9 @@ uv run python scripts/04_train_baseline.py
 uv run python scripts/05_train_gnn.py
 uv run python scripts/05b_train_chemprop.py
 uv run python scripts/06_compare.py
-uv run python scripts/07_diagnostics.py
+uv run python scripts/07_diagnostics.py            # learning curve (hours)
+uv run python scripts/07b_random_split_control.py  # optimism control (~1 hour)
+uv run python scripts/10_multitarget.py            # HDAC6 + hERG replication
 uv run python scripts/99_verify.py
 ```
 
@@ -280,7 +297,9 @@ fails.
 
 **Runtime.** The data phases take a few minutes and the random forest about 14 minutes. The graph
 models are the expensive part on CPU: the GINE tuning grid plus five seeds runs about three hours,
-Chemprop about 85 minutes, and the diagnostics a further few hours.
+Chemprop about 85 minutes, the learning curve several hours, and the three-target replication
+around eight. Chemprop on small molecular graphs does not scale past about four threads, so the
+targets are better run as concurrent processes than with more threads each.
 `torch.use_deterministic_algorithms(True)` is a meaningful part of that cost and is kept
 deliberately — same-seed GINE runs produce bitwise-identical predictions, which is verified as a
 gate. No GPU is used or needed.
@@ -300,7 +319,16 @@ src/
   chemprop_model.py   # Chemprop D-MPNN wrapper at author defaults
   gates.py            # every assertion gate, runnable standalone
   plotting.py         # figures
-scripts/              # 01 fetch -> 07 diagnostics, 99 verify
+scripts/
+  01_fetch_chembl.py .. 03_build_split.py   # data, cleaning, the split artifact
+  04_train_baseline.py                      # random forest
+  05_train_gnn.py / 05b_train_chemprop.py   # the two graph models
+  06_compare.py                             # comparison from saved predictions (seconds)
+  07_diagnostics.py                         # learning curve
+  07b_random_split_control.py               # optimism control, kept separate: cheap, and
+                                            #   it has already needed recomputing once
+  10_multitarget.py                         # HDAC6 + hERG replication
+  99_verify.py                              # re-derives every claim from the artifacts
 data/                 # committed derived artifacts + provenance.json
 results/              # metrics JSON, gate report, figures
 report.ipynb          # loads artifacts and renders; computes nothing

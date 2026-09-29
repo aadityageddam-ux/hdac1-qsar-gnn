@@ -178,22 +178,37 @@
       "val": 1023,
       "test": 1022
     },
+    "epochs_selected": {
+      "gine_scaffold": 142,
+      "gine_random": 249,
+      "chemprop_scaffold": 33,
+      "chemprop_random": 48
+    },
+    "note": "Optimism is scaffold RMSE minus random RMSE: how much better a random-split evaluation would have looked on identical data and models. Each split selects its own epoch count on its own validation fold; reusing the scaffold-selected count on the random split under-trains the neural models there and understates their optimism.",
+    "runtime_seconds": 65014.2,
     "Random forest (ECFP4 + descriptors)": {
       "random_rmse": 0.6081244877353804,
-      "scaffold_rmse": 0.736668353343529,
-      "optimism": 0.12854386560814857
+      "scaffold_rmse": 0.7370406652910446,
+      "optimism": 0.1289161775556642,
+      "scaffold_rmse_ensembled": 0.736668353343529,
+      "n_seeds_each_side": 1
     },
     "GINE graph neural network": {
-      "random_rmse": 0.6796392301453607,
-      "scaffold_rmse": 0.735687351065368,
-      "optimism": 0.05604812092000733
+      "random_rmse": 0.6215178885654371,
+      "scaffold_rmse": 0.7743788158846383,
+      "optimism": 0.1528609273192012,
+      "scaffold_rmse_ensembled": 0.735687351065368,
+      "n_seeds_each_side": 1
     },
     "Chemprop D-MPNN": {
-      "random_rmse": 0.6065948976119214,
-      "scaffold_rmse": 0.7312206145650555,
-      "optimism": 0.12462571695313407
+      "random_rmse": 0.6074746228983159,
+      "scaffold_rmse": 0.7684768054410067,
+      "optimism": 0.16100218254269083,
+      "scaffold_rmse_ensembled": 0.7312206145650555,
+      "n_seeds_each_side": 1
     },
-    "note": "Optimism is scaffold RMSE minus random RMSE: how much better a random-split evaluation would have looked on identical data and models."
+    "comparison": "single model on both sides: the per-seed mean scaffold RMSE against a single-seed random-split RMSE. The ensembled scaffold RMSE is recorded for reference but is NOT used for optimism, because the random side is not ensembled and seed-ensembling helps the neural models far more than the forest.",
+    "recomputed_from_cache": true
   },
   "runtime_seconds": 57251.4
 }

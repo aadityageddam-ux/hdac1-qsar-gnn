@@ -7,9 +7,9 @@
    scaffold group back on both sides and quietly reintroduce the leakage the split
    exists to prevent.
 
-2. **Random-split control.** Both models refit under a seeded random split at the same
-   fold fractions. The gap between the two numbers is the optimism that a random-split
-   evaluation would have bought, measured rather than asserted.
+2. **Random-split control** - now in `07b_random_split_control.py`. It is a handful of
+   fits rather than hours of retraining, and it has already needed recomputing once, so it
+   is kept separate and can be rerun without paying for the learning curve again.
 
 This script retrains models and takes a while, which is exactly why it is separate from
 06_compare.py - the headline table stays reproducible in seconds.
@@ -53,7 +53,6 @@ FRACTIONS: tuple[float, ...] = (0.10, 0.25, 0.50, 0.75, 1.00)
 CURVE_SEEDS: tuple[int, ...] = (0, 1)
 CURVE_MAX_EPOCHS = 120
 CURVE_PATIENCE = 20
-RANDOM_SPLIT_SEED = 20260925
 
 LABEL_RF = "Random forest (ECFP4 + descriptors)"
 LABEL_GNN = "GINE graph neural network"
@@ -98,7 +97,7 @@ def main() -> None:
     test = split[split.fold == "test"].reset_index(drop=True)
     y_test = test.pIC50.to_numpy(dtype=np.float64)
 
-    print("[1/3] Featurising and graphing the fixed folds ...")
+    print("[1/1] Featurising and graphing the fixed folds ...")
     X_val, _ = F.build_features(val.canonical_smiles.tolist())
     X_test, _ = F.build_features(test.canonical_smiles.tolist())
     X_val = X_val.astype(np.float32)
@@ -107,7 +106,7 @@ def main() -> None:
     test_graphs, _ = G.smiles_to_graphs(test.canonical_smiles.tolist(), y_test)
     print(f"      val {len(val)}, test {len(test)}")
 
-    print("[2/3] Learning curve (subsampling whole scaffold groups) ...")
+    print("[1/2] Learning curve (subsampling whole scaffold groups) ...")
     curve: dict[str, dict[str, list[float]]] = {
         label: {"mean": [], "sd": [], "n_train": []}
         for label in (LABEL_RF, LABEL_GNN, LABEL_CHEMPROP)
@@ -155,64 +154,6 @@ def main() -> None:
               f"GINE {np.mean(gnn_scores):.4f}+-{np.std(gnn_scores, ddof=1):.4f}   "
               f"Chemprop {np.mean(cp_scores):.4f}+-{np.std(cp_scores, ddof=1):.4f}")
 
-    print("[3/3] Random-split control ...")
-    rng = np.random.default_rng(RANDOM_SPLIT_SEED)
-    perm = rng.permutation(len(split))
-    n_tr, n_va = len(train), len(val)
-    r_train = split.iloc[perm[:n_tr]]
-    r_val = split.iloc[perm[n_tr:n_tr + n_va]]
-    r_test = split.iloc[perm[n_tr + n_va:]]
-    ry_test = r_test.pIC50.to_numpy(dtype=np.float64)
-
-    rX_fit, _ = F.build_features(
-        r_train.canonical_smiles.tolist() + r_val.canonical_smiles.tolist()
-    )
-    rX_test, _ = F.build_features(r_test.canonical_smiles.tolist())
-    ry_fit = np.concatenate([r_train.pIC50.to_numpy(), r_val.pIC50.to_numpy()])
-    rf_random = rf.fit_predict_multiseed(
-        rX_fit.astype(np.float32), ry_fit, rX_test.astype(np.float32),
-        best_rf_config, y_eval=ry_test, seeds=(0,), verbose=False,
-    )
-    rf_random_rmse = ev.compute_metric("rmse", ry_test, rf_random.mean_prediction)
-
-    r_train_graphs, _ = G.smiles_to_graphs(r_train.canonical_smiles.tolist(), r_train.pIC50.to_numpy())
-    r_val_graphs, _ = G.smiles_to_graphs(r_val.canonical_smiles.tolist(), r_val.pIC50.to_numpy())
-    r_test_graphs, _ = G.smiles_to_graphs(r_test.canonical_smiles.tolist(), ry_test)
-    # Select the epoch count on the RANDOM split's own validation fold. Reusing the
-    # scaffold-selected count here under-trains the neural models on the easier split and
-    # understates their optimism - which biases the very quantity this control measures,
-    # and in the direction that makes the random forest look uniquely leakage-sensitive.
-    _, g_sel = G.train_model(
-        r_train_graphs, r_val_graphs, G.GNNConfig(**best_gnn_config), seed=0
-    )
-    g_epochs_random = int(g_sel.best_epoch)
-    gmodel, gtr = G.train_model(
-        r_train_graphs + r_val_graphs, None, G.GNNConfig(**best_gnn_config),
-        seed=0, fixed_epochs=g_epochs_random,
-    )
-    gnn_random_rmse = ev.compute_metric("rmse", ry_test, G.predict(gmodel, r_test_graphs, gtr))
-
-    cp_metrics = json.loads((RESULTS / "metrics_chemprop.json").read_text(encoding="utf-8"))
-    cp_epochs_scaffold = int(cp_metrics["config"]["selected_epochs"])
-    _, _, _, cp_epochs_random = CP.train_once(
-        r_train, r_val, seed=0, max_epochs=CP.MAX_EPOCHS, use_early_stopping=True
-    )
-    cp_model, _, _, _ = CP.train_once(
-        pd.concat([r_train, r_val], ignore_index=True), None, seed=0,
-        max_epochs=int(cp_epochs_random), use_early_stopping=False,
-    )
-    cp_random_rmse = ev.compute_metric("rmse", ry_test, CP.predict(cp_model, r_test))
-
-    scaffold_rf = rf_metrics["regression"]["rmse"]
-    scaffold_gnn = gnn_metrics["regression"]["rmse"]
-    scaffold_cp = cp_metrics["regression"]["rmse"]
-    print(f"      RF   random {rf_random_rmse:.4f}  vs scaffold {scaffold_rf:.4f}  "
-          f"(optimism {scaffold_rf - rf_random_rmse:+.4f})")
-    print(f"      GINE random {gnn_random_rmse:.4f}  vs scaffold {scaffold_gnn:.4f}  "
-          f"(optimism {scaffold_gnn - gnn_random_rmse:+.4f})")
-    print(f"      CP   random {cp_random_rmse:.4f}  vs scaffold {scaffold_cp:.4f}  "
-          f"(optimism {scaffold_cp - cp_random_rmse:+.4f})")
-
     P.save_figure(
         P.learning_curve(
             FRACTIONS,
@@ -235,12 +176,6 @@ def main() -> None:
                 "n_seeds": len(CURVE_SEEDS),
                 "gnn_max_epochs": CURVE_MAX_EPOCHS,
                 "gnn_patience": CURVE_PATIENCE,
-                "epochs_selected": {
-                "gine_scaffold": int(gnn_metrics["tuning"]["best"]["best_epoch"]),
-                "gine_random": g_epochs_random,
-                "chemprop_scaffold": cp_epochs_scaffold,
-                "chemprop_random": int(cp_epochs_random),
-            },
             "note": (
                     "The curve uses 2 seeds and a capped epoch budget, unlike the headline "
                     "result which uses 5 seeds and patience 40 with a 300-epoch cap. The "
@@ -249,24 +184,14 @@ def main() -> None:
                 ),
             },
         },
-        "random_split_control": {
-            "seed": RANDOM_SPLIT_SEED,
-            "fold_sizes": {"train": int(n_tr), "val": int(n_va), "test": int(len(r_test))},
-            LABEL_RF: {"random_rmse": rf_random_rmse, "scaffold_rmse": scaffold_rf,
-                       "optimism": scaffold_rf - rf_random_rmse},
-            LABEL_GNN: {"random_rmse": gnn_random_rmse, "scaffold_rmse": scaffold_gnn,
-                        "optimism": scaffold_gnn - gnn_random_rmse},
-            LABEL_CHEMPROP: {"random_rmse": cp_random_rmse, "scaffold_rmse": scaffold_cp,
-                             "optimism": scaffold_cp - cp_random_rmse},
-            "note": (
-                "Optimism is scaffold RMSE minus random RMSE: how much better a "
-                "random-split evaluation would have looked on identical data and models."
-            ),
-        },
         "runtime_seconds": round(time.time() - t_start, 1),
     }
-    (RESULTS / "diagnostics.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    print(f"      wrote diagnostics.json and fig_learning_curve.png")
+    # Merge rather than overwrite: 07b_random_split_control.py owns the control section.
+    out = RESULTS / "diagnostics.json"
+    existing = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {}
+    existing.update(payload)
+    out.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    print(f"      wrote learning_curve into diagnostics.json and fig_learning_curve.png")
     print(f"07_diagnostics.py complete in {payload['runtime_seconds']:.0f}s.")
 
 

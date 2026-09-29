@@ -299,6 +299,71 @@ def verify_readme(models: dict[str, dict], comparison: dict) -> None:
         check(claim, present)
 
 
+def verify_random_split_control() -> None:
+    """Guard against the epoch-selection bias that reversed this project's headline twice.
+
+    The random-split control must select each model's epoch count on the random split's own
+    validation fold. Reusing the scaffold-selected count under-trains the neural models on
+    the easier split and understates their optimism - and because the random forest has no
+    epoch selection, the bias lands only on the neural rows, in the direction that makes the
+    forest look uniquely leakage-sensitive. That produced a headline finding that was exactly
+    backwards, so it gets an explicit regression check rather than a comment.
+    """
+    print()
+    print("[8] Random-split control integrity")
+    path = RESULTS / "diagnostics.json"
+    if not path.exists():
+        print("  SKIP  diagnostics.json not present")
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    control = payload.get("random_split_control")
+    if not control:
+        print("  SKIP  no random_split_control section")
+        return
+
+    epochs = control.get("epochs_selected")
+    check("the control records which epoch counts it selected", bool(epochs),
+          "missing epochs_selected: rerun scripts/07b_random_split_control.py")
+    if not epochs:
+        return
+    for model in ("gine", "chemprop"):
+        scaffold_epochs = epochs.get(f"{model}_scaffold")
+        random_epochs = epochs.get(f"{model}_random")
+        check(f"{model}: the random split selected its own epoch count",
+              random_epochs is not None and scaffold_epochs is not None,
+              f"scaffold={scaffold_epochs}, random={random_epochs}")
+
+    # The second protocol trap: the two sides of the subtraction must use the same seed
+    # protocol. Seed-ensembling improves the neural models by ~0.04 RMSE and the forest by
+    # ~0.001, so an ensembled scaffold RMSE minus a single-seed random RMSE silently strips
+    # ~0.04 from the neural models' optimism and nothing from the forest's - the same
+    # distortion as the epoch bug, by a different route.
+    single_model_rmse = {}
+    for name, path_name in (
+        ("Random forest (ECFP4 + descriptors)", "metrics_rf.json"),
+        ("GINE graph neural network", "metrics_gnn.json"),
+        ("Chemprop D-MPNN", "metrics_chemprop.json"),
+    ):
+        if (RESULTS / path_name).exists():
+            m = json.loads((RESULTS / path_name).read_text(encoding="utf-8"))
+            single_model_rmse[name] = (
+                m.get("per_seed_rmse_mean") or m["multiseed"]["per_seed_rmse_mean"]
+            )
+
+    for label, block in control.items():
+        if isinstance(block, dict) and "optimism" in block:
+            expected = block["scaffold_rmse"] - block["random_rmse"]
+            check(f"{label}: optimism is scaffold minus random",
+                  abs(expected - block["optimism"]) < 1e-9, f"{block['optimism']:+.4f}")
+            check(f"{label}: the random split is the easier one",
+                  block["optimism"] > 0, f"{block['optimism']:+.4f}")
+            if label in single_model_rmse:
+                check(f"{label}: both sides use the same seed protocol",
+                      abs(block["scaffold_rmse"] - single_model_rmse[label]) < 1e-9,
+                      f"scaffold side {block['scaffold_rmse']:.4f} vs single-model "
+                      f"{single_model_rmse[label]:.4f}")
+
+
 def verify_multitarget() -> None:
     """Re-derive the three-target replication claims from multitarget.json.
 
@@ -363,6 +428,7 @@ def main() -> None:
     verify_no_test_tuning()
     if protocol is not None:
         verify_readme(protocol[0], protocol[1])
+    verify_random_split_control()
     verify_multitarget()
 
     print("\n" + "=" * 78)
