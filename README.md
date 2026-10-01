@@ -385,10 +385,10 @@ The derived data files in `data/` come from ChEMBL and are licensed CC BY-SA 3.0
 
 1. Hou P, Li Y, Zhang X, et al. Pluripotent stem cells induced from mouse somatic cells by
    small-molecule compounds. *Science* 2013;341(6146):651–654.
-   [PMID 23979017](https://pubmed.ncbi.nlm.nih.gov/23979017/)
+   [PMID 23868920](https://pubmed.ncbi.nlm.nih.gov/23868920/)
 2. Cacchiarelli D, Trapnell C, et al. Integrative analyses of human reprogramming reveal dynamic
    nature of induced pluripotency.
-   [PMC3943685](https://pmc.ncbi.nlm.nih.gov/articles/PMC3943685/)
+   *Cell* 2015;162(2):412–424. [PMID 26186193](https://pubmed.ncbi.nlm.nih.gov/26186193/)
 3. Yang K, Swanson K, Jin W, et al. Analyzing learned molecular representations for property
    prediction. *J Chem Inf Model* 2019;59(8):3370–3388.
    [PMID 31361484](https://pubmed.ncbi.nlm.nih.gov/31361484/)
