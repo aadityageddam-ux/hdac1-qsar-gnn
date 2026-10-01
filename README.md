@@ -3,6 +3,10 @@
 **Does a graph neural network learn anything about HDAC1 inhibition that a 2048-bit ECFP4 random
 forest does not — and how much does that answer depend on how the test set was chosen?**
 
+HDAC inhibitors such as valproic acid can improve reprogramming to pluripotency more than 100-fold
+(Huangfu et al. 2008), so HDAC inhibition is a realistic target for reprogramming chemistry, and a
+good test case for how much a model's apparent accuracy depends on how the compounds were split.
+
 **Result: the split decides the answer, on every target tested.** Across three ChEMBL targets —
 HDAC1, HDAC6 and hERG — whether a random forest and Chemprop's D-MPNN differ significantly flips
 depending on whether compounds are assigned to folds by Murcko scaffold or at random. In all three
@@ -410,6 +414,9 @@ The derived data files in `data/` come from ChEMBL and are licensed CC BY-SA 3.0
 10. Zdrazil B, Felix E, Hunter F, et al. The ChEMBL Database in 2023. *Nucleic Acids Res*
     2024;52(D1):D1180–D1192. [PMID 37933841](https://pubmed.ncbi.nlm.nih.gov/37933841/)
 11. RDKit: Open-source cheminformatics. <https://www.rdkit.org>
+12. Huangfu D, Maehr R, Guo W, et al. Induction of pluripotent stem cells by defined factors is
+    greatly improved by small-molecule compounds. *Nat Biotechnol* 2008;26(7):795–797.
+    [PMID 18568017](https://pubmed.ncbi.nlm.nih.gov/18568017/)
 
 **Data source.** ChEMBL target `CHEMBL325` (histone deacetylase 1, *Homo sapiens*, UniProt
 Q13547), retrieved 2026-09-26 via `chembl_webresource_client`. Exact query predicates and
