@@ -15,6 +15,8 @@ hand-rolled GINE network, and Chemprop's D-MPNN — land within 0.006 pIC50 log 
 with 1 of 27 model-pair × metric comparisons reaching significance, which is what 27 tests at
 α = 0.05 produce by chance.
 
+![Left: test RMSE of a random forest and Chemprop under scaffold and random splits on HDAC1, HDAC6 and hERG; which model wins changes with the split. Right: how much a random split flatters each model; the graph model gains more on all three targets.](results/fig_headline.png)
+
 > **Two corrections, kept visible because they are the most useful thing in this repository.**
 > This finding was wrong twice before it was right, and both errors are instructive.
 >
