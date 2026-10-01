@@ -1,4 +1,4 @@
-# The split decides the answer: fingerprint vs graph models across three ChEMBL targets
+# The split changes the answer: fingerprint vs graph models across three ChEMBL targets
 
 **Does a graph neural network learn anything about HDAC1 inhibition that a 2048-bit ECFP4 random
 forest does not — and how much does that answer depend on how the test set was chosen?**
@@ -7,12 +7,14 @@ HDAC inhibitors such as valproic acid can improve reprogramming to pluripotency 
 (Huangfu et al. 2008), so HDAC inhibition is a realistic target for reprogramming chemistry, and a
 good test case for how much a model's apparent accuracy depends on how the compounds were split.
 
-**Result: the split decides the answer, on every target tested.** Across three ChEMBL targets —
-HDAC1, HDAC6 and hERG — whether a random forest and Chemprop's D-MPNN differ significantly flips
-depending on whether compounds are assigned to folds by Murcko scaffold or at random. In all three
-cases the conclusion changes. And the direction is systematic: **the graph model gains consistently
-more from a random split than the fingerprint baseline does** (the forest's optimism is 0.66–0.76×
-the D-MPNN's, 3 targets out of 3), so a lenient split flatters graph models specifically.
+**Result: on all three targets, the split changed which model looked better.** Across three ChEMBL
+targets — HDAC1, HDAC6 and hERG — whether a random forest and Chemprop's D-MPNN differ significantly
+flips depending on whether compounds are assigned to folds by Murcko scaffold or at random. In all
+three cases the conclusion changes. (A change in significance is not itself a tested difference, and
+the study is modestly powered: three seeds, one graph model, three congeneric targets.) The direction
+is consistent: **the graph model gains more from a random split than the fingerprint baseline does**
+(the forest's optimism is 0.66–0.76× the D-MPNN's, 3 targets out of 3), so a lenient split appears
+to flatter graph models in particular.
 
 On the honest scaffold split of HDAC1's 6,816 compounds, three models — a tuned random forest, a
 hand-rolled GINE network, and Chemprop's D-MPNN — land within 0.006 pIC50 log units of each other,
