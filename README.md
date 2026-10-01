@@ -373,6 +373,12 @@ versus mine, and the cases where the model was wrong — including a guard that 
 `np.std` of identical floats is not exactly zero, and a leakage gate whose threshold encoded an
 assumption that measurement refuted.
 
+## Licence
+
+Code (`src/`, `scripts/`), figures (`results/`) and this README: MIT, see [`LICENSE`](LICENSE).
+
+The derived data files in `data/` come from ChEMBL and are licensed CC BY-SA 3.0, not MIT. ChEMBL data is from <https://www.ebi.ac.uk/chembl>, retrieved 2026-09-26 from the live REST API. See [`data/README.md`](data/README.md) for the attribution and what ShareAlike requires if you redistribute them.
+
 ## Citations
 
 1. Hou P, Li Y, Zhang X, et al. Pluripotent stem cells induced from mouse somatic cells by
