@@ -1,0 +1,3 @@
+# Hashed artifacts must be byte-identical on every OS (99_verify.py checks SHA-256s).
+data/*.csv -text
+results/*.json -text
