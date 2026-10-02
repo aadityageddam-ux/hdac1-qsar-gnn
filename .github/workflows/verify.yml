@@ -1,0 +1,23 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      # The verifier re-derives every README number from committed artifacts and needs
+      # no torch/chemprop, so CI installs only the light dependencies.
+      - name: Install light dependencies
+        run: pip install ruff "rdkit>=2026.3" "scikit-learn>=1.9" "pandas>=2.2" "numpy>=2.2" "scipy>=1.17"
+      - name: Lint (syntax errors and undefined names)
+        run: ruff check --select E9,F63,F7,F82 src scripts
+      - name: Verify committed results
+        run: python scripts/99_verify.py
